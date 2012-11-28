@@ -229,16 +229,17 @@
         ctx.closePath();
         var path = this._getSVGPathData();
         path = path.join('');
+        var thickness = this._strokeWidth / 2;
 
-        if (path === "M 0 0 Q 0 0 0 0 L 0 0") {
-            // do not create 0 width/height paths, as they are
+        // detect points
+        if (path === "M 0 0 Q 0 0 0 0 L 0 0 ") {
+            // 0 width/height paths, as they are
             // rendered inconsistently across browsers
-            // Firefox 4, for example, renders a dot, 
-            // whereas Chrome 10 renders nothing
-            fabricCanvas.renderAll();
-            return;
+            // we draw a dot shaped like curve instead.
+            path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
         }
 
+        debug.debug(path);
         var p = new fabric.Path(path);
         p.fill = null;
         p.stroke = this._color;
