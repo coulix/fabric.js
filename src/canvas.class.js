@@ -874,42 +874,7 @@
         );
       }
     },
-<<<<<<< HEAD
   
-   /*
-   * Draw a dashed line between two points
-   *
-   * this method is used to draw dashed line around selection area.
-   * http://stackoverflow.com/questions/4576724/dotted-stroke-in-canvas  
-   *
-   * @method drawDashedLine
-   * @param ctx {Canvas} context
-   * @param x {number} start x coordinate
-   * @param y {number} start y coordinate
-   * @param x2 {number} end x coordinate
-   * @param y2 {number} end y coordinate
-   * @param da {Array} dash array pattern
-   */
-   drawDashedLine: function(ctx, x, y, x2, y2, da){
-     if (!da) da = [10,5];
-      ctx.save();
-      var dx = (x2-x), dy = (y2-y);
-      var len = Math.sqrt(dx*dx + dy*dy);
-      var rot = Math.atan2(dy, dx);
-      ctx.translate(x, y);
-      ctx.moveTo(0, 0);
-      ctx.rotate(rot);       
-      var dc = da.length;
-      var di = 0, draw = true;
-      x = 0;
-      while (len > x) {
-        x += da[di++ % dc];
-        if (x > len) x = len;
-        draw ? ctx.lineTo(x, 0): ctx.moveTo(x, 0);
-        draw = !draw;
-      }       
-=======
-
     /*
      * Draws a dashed line between two points
      *
