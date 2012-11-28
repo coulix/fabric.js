@@ -79,7 +79,7 @@
      * @property
      * @type Array
      */ 
-    selectionDashArray:      [],
+    selectionDashArray:      [ ],
 
     /**
      * Color of the border of selection (usually slightly darker than color of selection itself)
@@ -834,8 +834,8 @@
      * @private
      */
     _drawSelection: function () {
-      var ctx = this.contextTop;
-      var groupSelector = this._groupSelector,
+      var ctx = this.contextTop,
+          groupSelector = this._groupSelector,
           left = groupSelector.left,
           top = groupSelector.top,
           aleft = abs(left),
@@ -874,6 +874,7 @@
         );
       }
     },
+<<<<<<< HEAD
   
    /*
    * Draw a dashed line between two points
@@ -907,6 +908,46 @@
         draw ? ctx.lineTo(x, 0): ctx.moveTo(x, 0);
         draw = !draw;
       }       
+=======
+
+    /*
+     * Draws a dashed line between two points
+     *
+     * this method is used to draw dashed line around selection area.
+     * http://stackoverflow.com/questions/4576724/dotted-stroke-in-canvas
+     *
+     * @method drawDashedLine
+     * @param ctx {Canvas} context
+     * @param x {number} start x coordinate
+     * @param y {number} start y coordinate
+     * @param x2 {number} end x coordinate
+     * @param y2 {number} end y coordinate
+     * @param da {Array} dash array pattern
+     */
+    drawDashedLine: function(ctx, x, y, x2, y2, da) {
+      var dx = x2 - x,
+          dy = y2 - y,
+          len = Math.sqrt(dx*dx + dy*dy),
+          rot = Math.atan2(dy, dx),
+          dc = da.length,
+          di = 0,
+          draw = true;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.moveTo(0, 0);
+      ctx.rotate(rot);
+
+      x = 0;
+      while (len > x) {
+        x += da[di++ % dc];
+        if (x > len) {
+          x = len;
+        }
+        ctx[draw ? 'lineTo' : 'moveTo'](x, 0);
+        draw = !draw;
+      }
+
       ctx.restore();
     },
 
