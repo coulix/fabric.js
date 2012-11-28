@@ -239,7 +239,6 @@
             path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
         }
 
-        debug.debug(path);
         var p = new fabric.Path(path);
         p.fill = null;
         p.stroke = this._color;
