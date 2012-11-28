@@ -6310,16 +6310,16 @@ fabric.util.string = {
      *   related to the canvas.
      */
      _captureDrawingPath: function(pointer) {
-       var MIN_POINT_DISTANCE = 2;
+       //var MIN_POINT_DISTANCE = 2;
        var pointerPoint = new fabric.Point(pointer.x, pointer.y); 
        // Only push point if min_point_distance is reached
-       var lastPoint = this._points[this._points.length -1];
+       //var lastPoint = this._points[this._points.length -1];
 
-       if (pointerPoint.distanceFrom(lastPoint) > MIN_POINT_DISTANCE) 
+       //if (pointerPoint.distanceFrom(lastPoint) > MIN_POINT_DISTANCE) 
          this._addPoint(pointerPoint);
 
-       if (this._points.length < 2) 
-         this._addPoint(pointerPoint);
+       //if (this._points.length < 2) 
+         //this._addPoint(pointerPoint);
     },
 
     /**
