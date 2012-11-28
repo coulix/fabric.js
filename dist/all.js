@@ -1,7 +1,7 @@
 /* build: `node build.js modules=ALL` */
 /*! Fabric.js Copyright 2008-2012, Printio (Juriy Zaytsev, Maxim Chernyak) */
 
-var fabric = fabric || { version: "0.9.22" };
+var fabric = fabric || { version: "0.9.23" };
 
 if (typeof exports !== 'undefined') {
   exports.fabric = fabric;
@@ -37,17 +37,19 @@ fabric.isLikelyNode = typeof Buffer !== 'undefined' && typeof window === 'undefi
 
 var Cufon = (function() {
 
+  /** @ignore */
   var api = function() {
     return api.replace.apply(null, arguments);
   };
 
+  /** @ignore */
   var DOM = api.DOM = {
 
     ready: (function() {
 
       var complete = false, readyStatus = { loaded: 1, complete: 1 };
 
-      var queue = [], perform = function() {
+      var queue = [], /** @ignore */ perform = function() {
         if (complete) return;
         complete = true;
         for (var fn; fn = queue.shift(); fn());
@@ -89,27 +91,33 @@ var Cufon = (function() {
 
   };
 
-  var CSS = api.CSS = {
+  /** @ignore */
+  var CSS = api.CSS = /** @ignore */ {
 
+    /** @ignore */
     Size: function(value, base) {
 
       this.value = parseFloat(value);
       this.unit = String(value).match(/[a-z%]*$/)[0] || 'px';
 
+      /** @ignore */
       this.convert = function(value) {
         return value / base * this.value;
       };
 
+      /** @ignore */
       this.convertFrom = function(value) {
         return value / this.value * base;
       };
 
+      /** @ignore */
       this.toString = function() {
         return this.value + this.unit;
       };
 
     },
 
+    /** @ignore */
     getStyle: function(el) {
       return new Style(el.style);
       /*
@@ -161,6 +169,7 @@ var Cufon = (function() {
 
     })(),
 
+    /** @ignore */
     supports: function(property, value) {
       var checker = fabric.document.createElement('span').style;
       if (checker[property] === undefined) return false;
@@ -168,6 +177,7 @@ var Cufon = (function() {
       return checker[property] === value;
     },
 
+    /** @ignore */
     textAlign: function(word, style, position, wordCount) {
       if (style.get('textAlign') == 'right') {
         if (position > 0) word = ' ' + word;
@@ -176,6 +186,7 @@ var Cufon = (function() {
       return word;
     },
 
+    /** @ignore */
     textDecoration: function(el, style) {
       if (!style) style = this.getStyle(el);
       var types = {
@@ -225,6 +236,7 @@ var Cufon = (function() {
       return parsed;
     }),
 
+    /** @ignore */
     textTransform: function(text, style) {
       return text[{
         uppercase: 'toUpperCase',
@@ -255,6 +267,7 @@ var Cufon = (function() {
       };
       box.width = box.maxX - box.minX,
       box.height = box.maxY - box.minY;
+      /** @ignore */
       box.toString = function() {
         return [ this.minX, this.minY, this.width, this.height ].join(' ');
       };
@@ -279,6 +292,7 @@ var Cufon = (function() {
       (styles[font.style] || (styles[font.style] = {}))[font.weight] = font;
     };
 
+    /** @ignore */
     this.get = function(style, weight) {
       var weights = styles[style] || styles[mapping[style]]
         || styles.normal || styles.italic || styles.oblique;
@@ -364,6 +378,7 @@ var Cufon = (function() {
       return el.cufid || (el.cufid = ++at);
     }
 
+    /** @ignore */
     this.get = function(el) {
       var id = identify(el);
       return map[id] || (map[id] = {});
@@ -461,6 +476,7 @@ var Cufon = (function() {
     return fragment;
   }
 
+  /** @ignore */
   function replaceElement(el, options) {
     var font, style, nextNode, redraw;
     for (var node = attach(el, options).firstChild; node; node = nextNode) {
@@ -529,11 +545,13 @@ var Cufon = (function() {
     characters: ''
   };
 
+  /** @ignore */
   api.now = function() {
     DOM.ready();
     return api;
   };
 
+  /** @ignore */
   api.refresh = function() {
     var currentHistory = replaceHistory.splice(0, replaceHistory.length);
     for (var i = 0, l = currentHistory.length; i < l; ++i) {
@@ -542,12 +560,14 @@ var Cufon = (function() {
     return api;
   };
 
+  /** @ignore */
   api.registerEngine = function(id, engine) {
     if (!engine) return api;
     engines[id] = engine;
     return api.set('engine', id);
   };
 
+  /** @ignore */
   api.registerFont = function(data) {
     var font = new Font(data), family = font.family;
     if (!fonts[family]) fonts[family] = new FontFamily();
@@ -555,6 +575,7 @@ var Cufon = (function() {
     return api.set('fontFamily', '"' + family + '"');
   };
 
+  /** @ignore */
   api.replace = function(elements, options, ignoreHistory) {
     options = merge(defaultOptions, options);
     if (!options.engine) return api; // there's no browser support so we'll just stop here
@@ -572,6 +593,7 @@ var Cufon = (function() {
     return api;
   };
 
+  /** @ignore */
   api.replaceElement = function(el, options) {
     options = merge(defaultOptions, options);
     if (typeof options.textShadow == 'string' && options.textShadow)
@@ -579,14 +601,14 @@ var Cufon = (function() {
     return replaceElement(el, options);
   };
 
-  // ==>
   api.engines = engines;
   api.fonts = fonts;
+  /** @ignore */
   api.getOptions = function() {
     return merge(defaultOptions);
-  }
-  // <==
+  };
 
+  /** @ignore */
   api.set = function(option, value) {
     defaultOptions[option] = value;
     return api;
@@ -1404,6 +1426,7 @@ if (!JSON) {
 
     if (typeof Date.prototype.toJSON !== 'function') {
 
+        /** @ignore */
         Date.prototype.toJSON = function (key) {
 
             return isFinite(this.valueOf())
@@ -1418,6 +1441,7 @@ if (!JSON) {
 
         String.prototype.toJSON      =
             Number.prototype.toJSON  =
+            /** @ignore */
             Boolean.prototype.toJSON = function (key) {
                 return this.valueOf();
             };
@@ -1587,6 +1611,7 @@ if (!JSON) {
 // If the JSON object does not yet have a stringify method, give it one.
 
     if (typeof JSON.stringify !== 'function') {
+        /** @ignore */
         JSON.stringify = function (value, replacer, space) {
 
 // The stringify method takes a value and an optional replacer, and an optional
@@ -1634,6 +1659,7 @@ if (!JSON) {
 // If the JSON object does not yet have a parse method, give it one.
 
     if (typeof JSON.parse !== 'function') {
+        /** @ignore */
         JSON.parse = function (text, reviver) {
 
 // The parse method takes a text and an optional reviver function, and returns
@@ -1718,7 +1744,7 @@ if (!JSON) {
 /**
  * Wrapper around `console.log` (when available)
  * @method log
- * @param {Any} Values to log
+ * @param {Any} values Values to log
  */
 fabric.log = function() { };
 
@@ -1731,12 +1757,12 @@ fabric.warn = function() { };
 
 if (typeof console !== 'undefined') {
   if (typeof console.log !== 'undefined' && console.log.apply) {
-    fabric.log = function() { 
+    fabric.log = function() {
       return console.log.apply(console, arguments);
     };
   }
   if (typeof console.warn !== 'undefined' && console.warn.apply) {
-    fabric.warn = function() { 
+    fabric.warn = function() {
       return console.warn.apply(console, arguments);
     };
   }
@@ -1815,13 +1841,14 @@ fabric.Observable = {
 /**
  * Alias for observe
  * @method observe
- * @memberOf fabric.Observable
+ * @type function
  */
 fabric.Observable.on = fabric.Observable.observe;
 
 /**
  * Alias for stopObserving
  * @method off
+ * @type function
  */
 fabric.Observable.off = fabric.Observable.stopObserving;
 (function() {
@@ -2373,23 +2400,24 @@ fabric.util.string = {
      * @param {Any[]} [...] Values to pass to a bound function
      * @return {Function}
      */
-     Function.prototype.bind = function(thisArg) {
-       var fn = this, args = slice.call(arguments, 1), bound;
-       if (args.length) {
-         bound = function() {
-           return apply.call(fn, this instanceof Dummy ? this : thisArg, args.concat(slice.call(arguments)));
-         };
-       }
-       else {
-         bound = function() {
-           return apply.call(fn, this instanceof Dummy ? this : thisArg, arguments);
-         };
-       }
-       Dummy.prototype = this.prototype;
-       bound.prototype = new Dummy();
+    Function.prototype.bind = function(thisArg) {
+      var fn = this, args = slice.call(arguments, 1), bound;
+      if (args.length) {
+        bound = function() {
+          return apply.call(fn, this instanceof Dummy ? this : thisArg, args.concat(slice.call(arguments)));
+        };
+      }
+      else {
+        /** @ignore */
+        bound = function() {
+          return apply.call(fn, this instanceof Dummy ? this : thisArg, arguments);
+        };
+      }
+      Dummy.prototype = this.prototype;
+      bound.prototype = new Dummy();
 
-       return bound;
-     };
+      return bound;
+    };
   }
 
 })();
@@ -2441,9 +2469,19 @@ fabric.util.string = {
 
   function Subclass() { }
 
+  function callSuper(methodName) {
+    var fn = this.constructor.superclass.prototype[methodName];
+    return (arguments.length > 1)
+      ? fn.apply(this, slice.call(arguments, 1))
+      : fn.call(this);
+  }
+
   /**
-   * Helper for creation of "classes"
+   * Helper for creation of "classes". Note that pr
    * @method createClass
+   * @param parent optional "Class" to inherit from
+   * @param properties Properties shared by all instances of this class
+   *                  (be careful modifying objects defined here as this would affect all instances)
    * @memberOf fabric.util
    */
   function createClass() {
@@ -2472,6 +2510,7 @@ fabric.util.string = {
       klass.prototype.initialize = emptyFunction;
     }
     klass.prototype.constructor = klass;
+    klass.prototype.callSuper = callSuper;
     return klass;
   }
 
@@ -2913,12 +2952,13 @@ fabric.util.string = {
     };
   }
   else {
+    /** @ignore */
     getElementPosition = function (element) {
       var value = element.style.position;
       if (!value && element.currentStyle) value = element.currentStyle.position;
       return value;
     };
-  } 
+  }
 
   (function () {
     var style = fabric.document.documentElement.style;
@@ -3997,6 +4037,7 @@ fabric.util.string = {
    /**
     * Takes url corresponding to an SVG document, and parses it into a set of fabric objects
     * @method loadSVGFromURL
+    * @memberof fabric
     * @param {String} url
     * @param {Function} callback
     * @param {Function} [reviver] Method for further parsing of SVG elements, called after each fabric object created.
@@ -4059,6 +4100,7 @@ fabric.util.string = {
   /**
     * Takes string corresponding to an SVG document, and parses it into a set of fabric objects
     * @method loadSVGFromString
+    * @memberof fabric
     * @param {String} string
     * @param {Function} callback
     * @param {Function} [reviver] Method for further parsing of SVG elements, called after each fabric object created.
@@ -4155,11 +4197,15 @@ fabric.util.string = {
   }
 
   /**
-   * @class Object
+   * @class Gradient
    * @memberOf fabric
    */
   fabric.Gradient = fabric.util.createClass(/** @scope fabric.Gradient.prototype */ {
 
+    /**
+     * @method initialize
+     * @param options optional Options with x1, y1, x2, y2 and colorStops
+     */
     initialize: function(options) {
 
       options || (options = { });
@@ -4172,6 +4218,10 @@ fabric.util.string = {
       this.colorStops = options.colorStops;
     },
 
+    /**
+     * Returns object representation of a gradient
+     * @method toObject
+     */
     toObject: function() {
       return {
         x1: this.x1,
@@ -4182,6 +4232,11 @@ fabric.util.string = {
       };
     },
 
+    /**
+     * Returns an instance of CanvasGradient
+     * @method toLiveGradient
+     * @param ctx
+     */
     toLiveGradient: function(ctx) {
       var gradient = ctx.createLinearGradient(
         this.x1, this.y1, this.x2 || ctx.canvas.width, this.y2);
@@ -4200,6 +4255,7 @@ fabric.util.string = {
     /**
      * @method fromElement
      * @static
+     * @memberof fabric.Gradient
      * @see http://www.w3.org/TR/SVG/pservers.html#LinearGradientElement
      */
     fromElement: function(el, instance) {
@@ -4254,6 +4310,7 @@ fabric.util.string = {
     /**
      * @method forObject
      * @static
+     * @memberof fabric.Gradient
      */
     forObject: function(obj, options) {
       options || (options = { });
@@ -4479,6 +4536,13 @@ fabric.util.string = {
       return Math.sqrt(dx * dx + dy * dy);
     },
 
+    /**
+     * Return the point between A (x,y) and B (x,y)
+     */ 
+    midPointFrom: function (that) {
+      return new Point(this.x + (that.x - this.x)/2, this.y + (that.y - this.y)/2);
+    },
+
     min: function (that) {
       return new Point(Math.min(this.x, that.x), Math.min(this.y, that.y));
     },
@@ -4512,6 +4576,7 @@ fabric.util.string = {
   };
 
 })(typeof exports !== 'undefined' ? exports : this);
+
 (function(global) {
 
   "use strict";
@@ -4678,7 +4743,7 @@ fabric.util.string = {
    *
    * @class Color
    * @memberOf fabric
-   * @param {String} color (optional) in hex or rgb(a) format
+   * @param {String} color optional in hex or rgb(a) format
    */
   function Color(color) {
     if (!color) {
@@ -6134,6 +6199,282 @@ fabric.util.string = {
   fabric.StaticCanvas.prototype.toJSON = fabric.StaticCanvas.prototype.toObject;
 
 })();
+
+(function(global) {
+  
+  "use strict";
+
+  var fabric = global.fabric || (global.fabric = { });
+
+  var utilMin = fabric.util.array.min,
+      utilMax = fabric.util.array.max;
+
+  if (fabric.FreeDrawing) {
+    fabric.warn('fabric.FreeDrawin is already defined');
+    return;
+  }
+
+  fabric.FreeDrawing = FreeDrawing;
+  
+  function FreeDrawing(fabricCanvas) {
+    this.init(fabricCanvas);
+  }
+
+  FreeDrawing.prototype =  { 
+    constructor: FreeDrawing,
+
+    /**
+     * Free Drawer handles scribbling on a fabricCanvas.
+     * It converts the hand writting to a SVG Path and adds this
+     * path to the canvas.
+     *
+     * @metod init
+     * @param fabricCavnas {FabricCanvas}
+     * 
+     */
+    init: function(fabricCanvas) {
+      this.canvas = fabricCanvas;
+      this._points = [];
+      this._color = this.canvas.freeDrawingColor;
+      this._strokeWidth = this.canvas.freeDrawingLineWidth;
+    },
+
+    /**
+     * Set path color
+     * @method setColor
+     * @param color {String/rgb/rgba}
+     *
+     */
+    setColor: function(color) {
+      this._color = color;
+    },
+
+    /**
+     * Set path thichness (strokeWidth)
+     * @method setThickness
+     * @param thickness {int}
+     *
+     */
+    setThickness: function(thickness) {
+      this._strokeWidth = thickness;
+    },
+ 
+    /**
+     * @private
+     * @method _addPoint
+     *
+     */
+    _addPoint: function(point) {
+      this._points.push(point);
+    },
+     
+    /**
+     * Clear points array and set contextTop canvas 
+     * style.
+     *
+     * @private
+     * @method _reset
+     *
+     */
+    _reset: function() {
+      this._points.length = 0;
+      var ctx = this.canvas.contextTop;
+
+      // set freehanddrawing line canvas parameters
+      ctx.strokeStyle = this._color;
+      ctx.lineWidth = this._strokeWidth;
+      ctx.lineCap = ctx.lineJoin = 'round';
+    },
+
+     /**
+     * @method _prepareForDrawing
+     */
+     _prepareForDrawing: function(pointer) {
+
+      this.canvas._isCurrentlyDrawing = true;
+      this.canvas.discardActiveObject().renderAll();
+
+      var p = new fabric.Point(pointer.x, pointer.y); 
+      this._reset();
+      this._addPoint(p);
+      this.canvas.contextTop.moveTo(p.x, p.y);
+
+    },
+
+
+    /**
+     * @private
+     * @method _captureDrawingPath
+     *
+     * @param point {pointer} (fabric.util.pointer) actual mouse position
+     *   related to the canvas.
+     */
+     _captureDrawingPath: function(pointer) {
+       var MIN_POINT_DISTANCE = 2;
+       var pointerPoint = new fabric.Point(pointer.x, pointer.y); 
+       // Only push point if min_point_distance is reached
+       var lastPoint = this._points[this._points.length -1];
+
+       if (pointerPoint.distanceFrom(lastPoint) > MIN_POINT_DISTANCE) 
+         this._addPoint(pointerPoint);
+
+       if (this._points.length < 2) 
+         this._addPoint(pointerPoint);
+    },
+
+    /**
+     * Draw a smooth path on the topCanvas using
+     * quadraticCurveTo.
+     *
+     * @private
+     * @method _render
+     *
+     */
+     _render: function() {
+       var ctx  = this.canvas.contextTop;
+       ctx.beginPath();
+
+       var p1 = this._points[0];
+       var p2 = this._points[1];
+
+       for (var i = 1, len = this._points.length; i < len; i++) {
+         // we pick the point between pi+1 & pi+2 as the 
+         // end point and p1 as our control point.
+         var midPoint = p1.midPointFrom(p2);
+         ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
+
+         var p1 = this._points[i];
+         var p2 = this._points[i+1];
+      }
+      // Draw last line as a straight line while 
+      // we wait for the next point to be able to calculate
+      // the bezier control point
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+    },
+
+    /**
+     * Return an SVG path based on our
+     * captured points and their boundinb box.
+     * 
+     * @private
+     * @method _getSVGPathData
+     *
+     */
+     _getSVGPathData: function() {
+       this.box = this.getPathBoundingBox(this._points);
+       return this.convertPointsToSVGPath(this._points, this.box.minx, this.box.maxx, this.box.miny, this.box.maxy);
+     },
+    
+     /**
+     * @method getPathBoundingBox
+     * @param points {Array of points}
+     */
+     getPathBoundingBox: function(points) {
+      var xBounds = [],
+          yBounds = [],
+          p1 = points[0],
+          p2 = points[1],
+          startPoint = p1;
+  
+      for (var i = 1, len = points.length; i < len; i++) {
+        var midPoint = p1.midPointFrom(p2);
+        // with startPoint, p1 as control point, midpoint as end point 
+        xBounds.push(startPoint.x);
+        xBounds.push(midPoint.x);
+        yBounds.push(startPoint.y);
+        yBounds.push(midPoint.y);
+
+        p1 = points[i];
+        p2 = points[i+1];
+        startPoint = midPoint;
+     } // end for
+    
+     xBounds.push(p1.x);
+     yBounds.push(p1.y);
+    
+     return {
+       minx: utilMin(xBounds),
+       miny: utilMin(yBounds),
+       maxx: utilMax(xBounds),
+       maxy: utilMax(yBounds)
+     };
+    },
+    
+   /**
+     * @method convertPointsToSVGPath
+     * @param points {Array of points}
+     */
+    convertPointsToSVGPath: function(points, minX, maxX, minY, maxY) {
+      var path = [];
+      var p1 = new fabric.Point(points[0].x - minX, points[0].y - minY);
+      var p2 = new fabric.Point(points[1].x - minX, points[1].y - minY);
+      
+      path.push('M ', points[0].x - minX, ' ', points[0].y - minY, ' ');
+      for (var i = 1, len = points.length; i < len; i++) {
+        var midPoint = p1.midPointFrom(p2);
+        // p1 is our bezier control point
+        // midpoint is our endpoint
+        // start point is p(i-1) value.
+        path.push('Q ', p1.x, ' ', p1.y, ' ', midPoint.x, ' ', midPoint.y, ' ');
+        p1 = new fabric.Point(points[i].x - minX, points[i].y - minY);
+        if ((i+1) < points.length)
+          p2 = new fabric.Point(points[i+1].x - minX, points[i+1].y - minY);
+      }
+      path.push('L ', p1.x, ' ', p1.y, ' ');
+      return path;
+    },
+
+   /**
+     * On mouseup after drawing the path on contextTop canvas
+     * we use the points captured to create an new fabric path object
+     * and add it to the fabric canvas.
+     *
+     * @method _finalizeAndAddPath
+     *
+     */
+
+    _finalizeAndAddPath: function() {
+        var ctx = this.canvas.contextTop;
+        ctx.closePath();
+        var path = this._getSVGPathData();
+        path = path.join('');
+
+        if (path === "M 0 0 Q 0 0 0 0 L 0 0") {
+            // do not create 0 width/height paths, as they are
+            // rendered inconsistently across browsers
+            // Firefox 4, for example, renders a dot, 
+            // whereas Chrome 10 renders nothing
+            fabricCanvas.renderAll();
+            return;
+        }
+
+        var p = new fabric.Path(path);
+        p.fill = null;
+        p.stroke = this._color;
+        p.strokeWidth = this._strokeWidth;
+        this.canvas.add(p);
+
+        // set path origin coordinates based on our bouding box
+        var originLeft = this.box.minx  + (this.box.maxx - this.box.minx) /2;
+        var originTop = this.box.miny  + (this.box.maxy - this.box.miny) /2;
+
+        this.canvas.contextTop.arc(originLeft, originTop, 3);
+
+        p.set("left", originLeft);
+        p.set("top", originTop)
+        // does not change position 
+        p.setCoords();
+ 
+        this.canvas.renderAll();
+
+        // fire event 'path' created
+        this.canvas.fire('path:created', { path: p });
+    }
+  };
+
+})(typeof exports !== 'undefined' ? exports : this);
+
 (function() {
 
   var extend = fabric.util.object.extend,
@@ -6307,8 +6648,7 @@ fabric.util.string = {
     _initInteractive: function() {
       this._currentTransform = null;
       this._groupSelector = null;
-      this._freeDrawingXPoints = [ ];
-      this._freeDrawingYPoints = [ ];
+      this.freeDrawing = new fabric.FreeDrawing(this);
       this._initWrapperElement();
       this._createUpperCanvas();
       this._initEvents();
@@ -6385,7 +6725,8 @@ fabric.util.string = {
       var target;
 
       if (this.isDrawingMode && this._isCurrentlyDrawing) {
-        this._finalizeDrawingPath();
+        this._isCurrentlyDrawing = false;
+        this.freeDrawing._finalizeAndAddPath();
         this.fire('mouse:up', { e: e });
         return;
       }
@@ -6460,10 +6801,13 @@ fabric.util.string = {
       if (!isLeftClick && !fabric.isTouchSupported) return;
 
       if (this.isDrawingMode) {
-        this._prepareForDrawing(e);
+        var pointer = this.getPointer(e);
+        this.freeDrawing._prepareForDrawing(pointer);
 
-        // capture coordinates immediately; this allows to draw dots (when movement never occurs)
-        this._captureDrawingPath(e);
+        // capture coordinates immediately; 
+        // this allows to draw dots (when movement never occurs) 
+        this.freeDrawing._captureDrawingPath(pointer);
+
         this.fire('mouse:down', { e: e });
         return;
       }
@@ -6533,7 +6877,13 @@ fabric.util.string = {
 
       if (this.isDrawingMode) {
         if (this._isCurrentlyDrawing) {
-          this._captureDrawingPath(e);
+          var pointer = this.getPointer(e);
+          this.freeDrawing._captureDrawingPath(pointer);
+          
+          // redraw curve
+          // clear top canvas
+          this.clearContext(this.contextTop);
+          this.freeDrawing._render(this.contextTop);
         }
         this.fire('mouse:move', { e: e });
         return;
@@ -6843,91 +7193,6 @@ fabric.util.string = {
       if (activeGroup) {
         activeGroup.saveCoords();
       }
-    },
-
-    /**
-     * @private
-     * @method _prepareForDrawing
-     */
-    _prepareForDrawing: function(e) {
-
-      this._isCurrentlyDrawing = true;
-
-      this.discardActiveObject().renderAll();
-
-      var pointer = this.getPointer(e);
-
-      this._freeDrawingXPoints.length = this._freeDrawingYPoints.length = 0;
-
-      this._freeDrawingXPoints.push(pointer.x);
-      this._freeDrawingYPoints.push(pointer.y);
-
-      this.contextTop.beginPath();
-      this.contextTop.moveTo(pointer.x, pointer.y);
-      this.contextTop.strokeStyle = this.freeDrawingColor;
-      this.contextTop.lineWidth = this.freeDrawingLineWidth;
-      this.contextTop.lineCap = this.contextTop.lineJoin = 'round';
-    },
-
-    /**
-     * @private
-     * @method _captureDrawingPath
-     */
-    _captureDrawingPath: function(e) {
-      var pointer = this.getPointer(e);
-
-      this._freeDrawingXPoints.push(pointer.x);
-      this._freeDrawingYPoints.push(pointer.y);
-
-      this.contextTop.lineTo(pointer.x, pointer.y);
-      this.contextTop.stroke();
-    },
-
-    /**
-     * @private
-     * @method _finalizeDrawingPath
-     */
-    _finalizeDrawingPath: function() {
-
-      this.contextTop.closePath();
-
-      this._isCurrentlyDrawing = false;
-
-      var minX = utilMin(this._freeDrawingXPoints),
-          minY = utilMin(this._freeDrawingYPoints),
-          maxX = utilMax(this._freeDrawingXPoints),
-          maxY = utilMax(this._freeDrawingYPoints),
-          path = [ ],
-          xPoints = this._freeDrawingXPoints,
-          yPoints = this._freeDrawingYPoints;
-
-      path.push('M ', xPoints[0] - minX, ' ', yPoints[0] - minY, ' ');
-
-      for (var i = 1, len = xPoints.length; i < len; i++) {
-        path.push('L ', xPoints[i] - minX, ' ', yPoints[i] - minY, ' ');
-      }
-
-      // TODO (kangax): maybe remove Path creation from here, to decouple fabric.Canvas from fabric.Path,
-      // and instead fire something like "drawing:completed" event with path string
-
-      path = path.join('');
-
-      if (path === "M 0 0 L 0 0 ") {
-        // do not create 0 width/height paths, as they are rendered inconsistently across browsers
-        // Firefox 4, for example, renders a dot, whereas Chrome 10 renders nothing
-        this.renderAll();
-        return;
-      }
-
-      var p = new fabric.Path(path);
-
-      p.fill = null;
-      p.stroke = this.freeDrawingColor;
-      p.strokeWidth = this.freeDrawingLineWidth;
-      this.add(p);
-      p.set("left", minX + (maxX - minX) / 2).set("top", minY + (maxY - minY) / 2).setCoords();
-      this.renderAll();
-      this.fire('path:created', { path: p });
     },
 
     /**
@@ -7330,7 +7595,10 @@ fabric.util.string = {
      */
     setActiveGroup: function (group) {
       this._activeGroup = group;
-      group && group.setActive(true);
+      if (group) {
+        group.canvas = this;
+        group.setActive(true);
+      }
       return this;
     },
 
@@ -7409,7 +7677,7 @@ fabric.util.string = {
   /**
    * @class fabric.Element
    * @alias fabric.Canvas
-   * @deprecated
+   * @deprecated Use {@link fabric.Canvas} instead.
    * @constructor
    */
   fabric.Element = fabric.Canvas;
@@ -7651,6 +7919,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
           else {
             obj.path = path;
             var object = fabric.Text.fromObject(obj);
+            /** @ignore */
             var onscriptload = function () {
               // TODO (kangax): find out why Opera refuses to work without this timeout
               if (Object.prototype.toString.call(fabric.window.opera) === '[object Opera]') {
@@ -8071,17 +8340,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
     ).split(' '),
 
     /**
-     * @method callSuper
-     * @param {String} methodName
-     */
-    callSuper: function(methodName) {
-      var fn = this.constructor.superclass.prototype[methodName];
-      return (arguments.length > 1)
-        ? fn.apply(this, slice.call(arguments, 1))
-        : fn.call(this);
-    },
-
-    /**
      * Constructor
      * @method initialize
      * @param {Object} [options] Options object
@@ -8093,7 +8351,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
     },
 
     /**
-     * @method initGradient
+     * @private
+     * @method _initGradient
      */
     _initGradient: function(options) {
       if (options.fill && typeof options.fill === 'object' && !(options.fill instanceof fabric.Gradient)) {
@@ -8625,6 +8884,10 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       return this;
     },
 
+    /**
+     * @private
+     * @method _renderDashedStroke
+     */
     _renderDashedStroke: function(ctx) {
 
       if (1 & this.strokeDashArray.length /* if odd number of items */) {
@@ -8641,6 +8904,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       ctx.save();
       ctx.beginPath();
 
+      /** @ignore */
       function renderSide(xMultiplier, yMultiplier) {
 
         var lineLength = 0,
@@ -9699,7 +9963,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   });
 
   /**
-   * List of attribute names to account for when parsing SVG element (used by `fabric.Line.fromElement`)
+   * List of attribute names to account for when parsing SVG element (used by {@link fabric.Line.fromElement})
    * @static
    * @see http://www.w3.org/TR/SVG/shapes.html#LineElement
    */
@@ -10170,7 +10434,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   };
 
   /**
-   * Returns fabric.Ellipse instance from an object representation
+   * Returns {@link fabric.Ellipse} instance from an object representation
    * @static
    * @method fabric.Ellipse.fromObject
    * @param {Object} object Object to create an instance from
@@ -10518,7 +10782,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   });
 
   /**
-   * List of attribute names to account for when parsing SVG element (used by `fabric.Polyline.fromElement`)
+   * List of attribute names to account for when parsing SVG element (used by {@link fabric.Polyline.fromElement})
    * @static
    * @see: http://www.w3.org/TR/SVG/shapes.html#PolylineElement
    */
@@ -11494,6 +11758,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   };
 
 })(typeof exports !== 'undefined' ? exports : this);
+
 (function(global) {
 
   "use strict";
@@ -12746,6 +13011,7 @@ fabric.Image.filters.Grayscale = fabric.util.createClass( /** @scope fabric.Imag
   type: "Grayscale",
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @memberOf fabric.Image.filters.Grayscale.prototype
    * @param {Object} canvasEl Canvas element to apply filter to
@@ -12774,6 +13040,7 @@ fabric.Image.filters.Grayscale = fabric.util.createClass( /** @scope fabric.Imag
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -12808,6 +13075,7 @@ fabric.Image.filters.RemoveWhite = fabric.util.createClass( /** @scope fabric.Im
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -12842,6 +13110,7 @@ fabric.Image.filters.RemoveWhite = fabric.util.createClass( /** @scope fabric.Im
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -12870,6 +13139,7 @@ fabric.Image.filters.Invert = fabric.util.createClass( /** @scope fabric.Image.f
   type: "Invert",
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @memberOf fabric.Image.filters.Invert.prototype
    * @param {Object} canvasEl Canvas element to apply filter to
@@ -12890,6 +13160,7 @@ fabric.Image.filters.Invert = fabric.util.createClass( /** @scope fabric.Image.f
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -12914,6 +13185,7 @@ fabric.Image.filters.Sepia = fabric.util.createClass( /** @scope fabric.Image.fi
   type: "Sepia",
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @memberOf fabric.Image.filters.Sepia.prototype
    * @param {Object} canvasEl Canvas element to apply filter to
@@ -12935,6 +13207,7 @@ fabric.Image.filters.Sepia = fabric.util.createClass( /** @scope fabric.Image.fi
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -12959,6 +13232,7 @@ fabric.Image.filters.Sepia2 = fabric.util.createClass( /** @scope fabric.Image.f
   type: "Sepia2",
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @memberOf fabric.Image.filters.Sepia.prototype
    * @param {Object} canvasEl Canvas element to apply filter to
@@ -12984,6 +13258,7 @@ fabric.Image.filters.Sepia2 = fabric.util.createClass( /** @scope fabric.Image.f
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13017,6 +13292,7 @@ fabric.Image.filters.Brightness = fabric.util.createClass( /** @scope fabric.Ima
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13036,6 +13312,7 @@ fabric.Image.filters.Brightness = fabric.util.createClass( /** @scope fabric.Ima
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13052,7 +13329,7 @@ fabric.Image.filters.Brightness.fromObject = function(object) {
 };
 
 /**
- * @class fabric.Image.filters.Brightness
+ * @class fabric.Image.filters.Noise
  * @memberOf fabric.Image.filters
  */
 fabric.Image.filters.Noise = fabric.util.createClass( /** @scope fabric.Image.filters.Noise.prototype */ {
@@ -13063,7 +13340,7 @@ fabric.Image.filters.Noise = fabric.util.createClass( /** @scope fabric.Image.fi
   type: "Noise",
 
   /**
-   * @memberOf fabric.Image.filters.Brightness.prototype
+   * @memberOf fabric.Image.filters.Noise.prototype
    * @param {Object} [options] Options object
    */
   initialize: function(options) {
@@ -13072,6 +13349,7 @@ fabric.Image.filters.Noise = fabric.util.createClass( /** @scope fabric.Image.fi
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13094,6 +13372,7 @@ fabric.Image.filters.Noise = fabric.util.createClass( /** @scope fabric.Image.fi
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13110,7 +13389,7 @@ fabric.Image.filters.Noise.fromObject = function(object) {
 };
 
 /**
- * @class fabric.Image.filters.Brightness
+ * @class fabric.Image.filters.GradientTransparency
  * @memberOf fabric.Image.filters
  */
 fabric.Image.filters.GradientTransparency = fabric.util.createClass( /** @scope fabric.Image.filters.GradientTransparency.prototype */ {
@@ -13121,7 +13400,6 @@ fabric.Image.filters.GradientTransparency = fabric.util.createClass( /** @scope 
   type: "GradientTransparency",
 
   /**
-   * @memberOf fabric.Image.filters.GradientTransparency.prototype
    * @param {Object} [options] Options object
    */
   initialize: function(options) {
@@ -13130,6 +13408,7 @@ fabric.Image.filters.GradientTransparency = fabric.util.createClass( /** @scope 
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13148,6 +13427,7 @@ fabric.Image.filters.GradientTransparency = fabric.util.createClass( /** @scope 
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13184,6 +13464,7 @@ fabric.Image.filters.Tint = fabric.util.createClass( /** @scope fabric.Image.fil
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13215,6 +13496,7 @@ fabric.Image.filters.Tint = fabric.util.createClass( /** @scope fabric.Image.fil
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13231,11 +13513,11 @@ fabric.Image.filters.Tint.fromObject = function(object) {
 };
 
 /**
+ * Adapted from <a href="http://www.html5rocks.com/en/tutorials/canvas/imagefilters/">html5rocks article</a>
  * @class fabric.Image.filters.Convolute
  * @memberOf fabric.Image.filters
- * Adapted from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
  */
-fabric.Image.filters.Convolute = fabric.util.createClass({
+fabric.Image.filters.Convolute = fabric.util.createClass(/** @scope fabric.Image.filters.Convolute.prototype */ {
 
   /**
    * @param {String} type
@@ -13266,6 +13548,7 @@ fabric.Image.filters.Convolute = fabric.util.createClass({
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13323,6 +13606,7 @@ fabric.Image.filters.Convolute = fabric.util.createClass({
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13342,7 +13626,7 @@ fabric.Image.filters.Convolute.fromObject = function(object) {
  * @class fabric.Image.filters.Pixelate
  * @memberOf fabric.Image.filters
  */
-fabric.Image.filters.Pixelate = fabric.util.createClass({
+fabric.Image.filters.Pixelate = fabric.util.createClass(/** @scope fabric.Image.filters.Pixelate.prototype */ {
 
   /**
    * @param {String} type
@@ -13359,6 +13643,7 @@ fabric.Image.filters.Pixelate = fabric.util.createClass({
   },
 
   /**
+   * Applies filter to canvas element
    * @method applyTo
    * @param {Object} canvasEl Canvas element to apply filter to
    */
@@ -13407,6 +13692,7 @@ fabric.Image.filters.Pixelate = fabric.util.createClass({
   },
 
   /**
+   * Returns json representation of filter
    * @method toJSON
    * @return {String} json representation of filter
    */
@@ -13867,6 +14153,7 @@ fabric.Image.filters.Pixelate.fromObject = function(object) {
       var halfOfVerticalBox = this._getTextHeight(ctx, textLines) / 2;
       var _this = this;
 
+      /** @ignore */
       function renderLinesAtOffset(offset) {
         for (var i = 0, len = textLines.length; i < len; i++) {
 
@@ -14168,7 +14455,7 @@ fabric.Image.filters.Pixelate.fromObject = function(object) {
   });
 
   /**
-   * List of attribute names to account for when parsing SVG element (used by `fabric.Text.fromElement`)
+   * List of attribute names to account for when parsing SVG element (used by {@link fabric.Text.fromElement})
    * @static
    */
   fabric.Text.ATTRIBUTE_NAMES =
@@ -14281,6 +14568,7 @@ fabric.Image.filters.Pixelate.fromObject = function(object) {
     });
   };
 
+  /** @ignore */
   fabric.loadSVGFromString = function(string, callback) {
     var doc = new DOMParser().parseFromString(string);
     fabric.parseSVGDocument(doc.documentElement, function(results, options) {
