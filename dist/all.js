@@ -6447,6 +6447,7 @@ fabric.util.string = {
         p.fill = null;
         p.stroke = this._color;
         p.strokeWidth = this._strokeWidth;
+        p.type = 'pen';
         this.canvas.add(p);
 
         // set path origin coordinates based on our bouding box
