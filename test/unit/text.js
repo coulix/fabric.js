@@ -8,6 +8,8 @@
 
   var REFERENCE_TEXT_OBJECT = {
     'type':             'text',
+    'originX':          'center',
+    'originY':          'center',
     'left':             0,
     'top':              0,
     'width':            20,
@@ -26,7 +28,7 @@
     'selectable':       true,
     'hasControls':      true,
     'hasBorders':       true,
-    'hasRotatingPoint': false,
+    'hasRotatingPoint': true,
     'transparentCorners': true,
     'perPixelTargetFind': false,
     'text':             'x',
@@ -41,6 +43,7 @@
     'path':             null,
     'strokeStyle':      '',
     'backgroundColor':  '',
+    'textBackgroundColor':  '',
     'useNative':        true
   };
 
@@ -174,7 +177,8 @@
     ok(textWithAttrs instanceof fabric.Text);
 
     var expectedObject = fabric.util.object.extend(REFERENCE_TEXT_OBJECT, {
-      left: 12.5,
+      /* left varies slightly due to node-canvas rendering so we're not testing for it */
+      left: textWithAttrs.left,
       top: -59.95,
       width: 20,
       height: 159.9,

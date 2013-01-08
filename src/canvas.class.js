@@ -17,11 +17,7 @@
         'mb': 's-resize'
       },
 
-      utilMin = fabric.util.array.min,
-      utilMax = fabric.util.array.max,
-
       sqrt = Math.sqrt,
-      pow = Math.pow,
       atan2 = Math.atan2,
       abs = Math.abs,
       min = Math.min,
@@ -30,6 +26,7 @@
       STROKE_OFFSET = 0.5;
 
   /**
+   * Canvas class
    * @class fabric.Canvas
    * @constructor
    * @extends fabric.StaticCanvas
@@ -51,6 +48,20 @@
   fabric.Canvas.prototype = new ProtoProxy();
 
   var InteractiveMethods = /** @scope fabric.Canvas.prototype */ {
+
+    /**
+     * When true, objects can be transformed by one side (unproportionally)
+     * @property
+     * @type Boolean
+     */
+    uniScaleTransform:      false,
+
+    /**
+     * When true, objects use center point as the origin of transformation
+     * @property
+     * @type Boolean
+     */
+    centerTransform:        false,
 
     /**
      * Indicates that canvas is interactive. This property should not be changed.
@@ -75,10 +86,10 @@
 
     /**
      * Default dash array pattern
-     * If not empty the selection border should be dashed
+     * If not empty the selection border is dashed
      * @property
      * @type Array
-     */ 
+     */
     selectionDashArray:      [ ],
 
     /**
@@ -165,7 +176,7 @@
     _initInteractive: function() {
       this._currentTransform = null;
       this._groupSelector = null;
-      this.freeDrawing = new fabric.FreeDrawing(this);
+      this.freeDrawing = fabric.FreeDrawing && new fabric.FreeDrawing(this);
       this._initWrapperElement();
       this._createUpperCanvas();
       this._initEvents();
@@ -242,7 +253,6 @@
       var target;
 
       if (this.isDrawingMode && this._isCurrentlyDrawing) {
-        this._isCurrentlyDrawing = false;
         this.freeDrawing._finalizeAndAddPath();
         this.fire('mouse:up', { e: e });
         return;
@@ -263,11 +273,17 @@
           this._objects[i].setCoords();
         }
 
+        target.isMoving = false;
+
         // only fire :modified event if target coordinates were changed during mousedown-mouseup
         if (this.stateful && target.hasStateChanged()) {
-          target.isMoving = false;
           this.fire('object:modified', { target: target });
           target.fire('modified');
+        }
+
+        if (this._previousOriginX) {
+          this._adjustPosition(this._currentTransform.target, this._previousOriginX);
+          this._previousOriginX = null;
         }
       }
 
@@ -313,16 +329,18 @@
      */
     __onMouseDown: function (e) {
 
+      var pointer;
+
       // accept only left clicks
       var isLeftClick  = 'which' in e ? e.which === 1 : e.button === 1;
       if (!isLeftClick && !fabric.isTouchSupported) return;
 
       if (this.isDrawingMode) {
-        var pointer = this.getPointer(e);
+        pointer = this.getPointer(e);
         this.freeDrawing._prepareForDrawing(pointer);
 
-        // capture coordinates immediately; 
-        // this allows to draw dots (when movement never occurs) 
+        // capture coordinates immediately;
+        // this allows to draw dots (when movement never occurs)
         this.freeDrawing._captureDrawingPath(pointer);
 
         this.fire('mouse:down', { e: e });
@@ -332,33 +350,27 @@
       // ignore if some object is being transformed at this moment
       if (this._currentTransform) return;
 
-      var target = this.findTarget(e),
-          pointer = this.getPointer(e),
-          activeGroup = this.getActiveGroup(),
-          corner;
+      var target = this.findTarget(e), corner;
+      pointer = this.getPointer(e);
 
       if (this._shouldClearSelection(e)) {
-
         this._groupSelector = {
           ex: pointer.x,
           ey: pointer.y,
           top: 0,
           left: 0
         };
-
         this.deactivateAllWithDispatch();
       }
       else {
         // determine if it's a drag or rotate case
-        // rotate and scale will happen at the same time
         this.stateful && target.saveState();
 
         if ((corner = target._findTargetCorner(e, this._offset))) {
           this.onBeforeScaleRotate(target);
         }
 
-        var shouldHandleGroupLogic = e.shiftKey && (activeGroup || this.getActiveObject()) && this.selection;
-        if (shouldHandleGroupLogic) {
+        if (this._shouldHandleGroupLogic(e, target)) {
           this._handleGroupLogic(e, target);
           target = this.getActiveGroup();
         }
@@ -376,6 +388,27 @@
 
       this.fire('mouse:down', { target: target, e: e });
       target && target.fire('mousedown', { e: e });
+
+      // center origin when rotating
+      if (corner === 'mtr') {
+        this._previousOriginX = this._currentTransform.target.originX;
+        this._adjustPosition(this._currentTransform.target, 'center');
+        this._currentTransform.left = this._currentTransform.target.left;
+        this._currentTransform.top = this._currentTransform.target.top;
+      }
+    },
+
+    /**
+     * @method _shouldHandleGroupLogic
+     * @param e {Event}
+     * @param target {fabric.Object}
+     * @return {Boolean}
+     */
+    _shouldHandleGroupLogic: function(e, target) {
+      var activeObject = this.getActiveObject();
+      return e.shiftKey &&
+            (this.getActiveGroup() || (activeObject && activeObject !== target))
+            && this.selection;
     },
 
     /**
@@ -390,13 +423,13 @@
       */
     __onMouseMove: function (e) {
 
-      var target;
+      var target, pointer;
 
       if (this.isDrawingMode) {
         if (this._isCurrentlyDrawing) {
-          var pointer = this.getPointer(e);
+          pointer = this.getPointer(e);
           this.freeDrawing._captureDrawingPath(pointer);
-          
+
           // redraw curve
           // clear top canvas
           this.clearContext(this.contextTop);
@@ -406,7 +439,7 @@
         return;
       }
 
-      var groupSelector = this._groupSelector, pointer;
+      var groupSelector = this._groupSelector;
 
       // We initially clicked in an empty area, so we draw a box for multiple selection.
       if (groupSelector !== null) {
@@ -450,65 +483,153 @@
 
         this._currentTransform.target.isMoving = true;
 
+        var t = this._currentTransform, reset = false;
+        if (
+            (t.action === 'scale' || t.action === 'scaleX' || t.action === 'scaleY')
+            &&
+            (
+              // Switch from a normal resize to center-based
+              (e.altKey && (t.originX !== 'center' || t.originY !== 'center'))
+              ||
+              // Switch from center-based resize to normal one
+              (!e.altKey && t.originX === 'center' && t.originY === 'center')
+            )
+           ) {
+          this._resetCurrentTransform(e);
+          reset = true;
+        }
+
         if (this._currentTransform.action === 'rotate') {
+          this._rotateObject(x, y);
+
+          this.fire('object:rotating', {
+            target: this._currentTransform.target
+          });
+          this._currentTransform.target.fire('rotating');
+        }
+        else if (this._currentTransform.action === 'scale') {
           // rotate object only if shift key is not pressed
           // and if it is not a group we are transforming
 
-          if (!e.shiftKey) {
+          // TODO
+          /*if (!e.shiftKey) {
             this._rotateObject(x, y);
 
             this.fire('object:rotating', {
-              target: this._currentTransform.target
+              target: this._currentTransform.target,
+              e: e
             });
             this._currentTransform.target.fire('rotating');
-          }
-          if (!this._currentTransform.target.hasRotatingPoint) {
+          }*/
+
+          // if (!this._currentTransform.target.hasRotatingPoint) {
+          //   this._scaleObject(x, y);
+          //   this.fire('object:scaling', {
+          //     target: this._currentTransform.target
+          //   });
+          //   this._currentTransform.target.fire('scaling');
+          // }
+
+          if (e.shiftKey || this.uniScaleTransform) {
+            this._currentTransform.currentAction = 'scale';
             this._scaleObject(x, y);
-            this.fire('object:scaling', {
-              target: this._currentTransform.target
-            });
-            this._currentTransform.target.fire('scaling');
           }
-        }
-        else if (this._currentTransform.action === 'scale') {
-          this._scaleObject(x, y);
+          else {
+            if (!reset && t.currentAction === 'scale') {
+              // Switch from a normal resize to proportional
+              this._resetCurrentTransform(e);
+            }
+
+            this._currentTransform.currentAction = 'scaleEqually';
+            this._scaleObject(x, y, 'equally');
+          }
+
           this.fire('object:scaling', {
-            target: this._currentTransform.target
+            target: this._currentTransform.target,
+            e: e
           });
-          this._currentTransform.target.fire('scaling');
         }
+        // else if (this._currentTransform.action === 'scale') {
+        //   this._scaleObject(x, y);
+        //   this.fire('object:scaling', {
+        //     target: this._currentTransform.target
+        //   });
+        //   this._currentTransform.target.fire('scaling');
+        // }
         else if (this._currentTransform.action === 'scaleX') {
           this._scaleObject(x, y, 'x');
 
           this.fire('object:scaling', {
-            target: this._currentTransform.target
+            target: this._currentTransform.target,
+            e: e
           });
-          this._currentTransform.target.fire('scaling');
+          this._currentTransform.target.fire('scaling', { e: e });
         }
         else if (this._currentTransform.action === 'scaleY') {
           this._scaleObject(x, y, 'y');
 
           this.fire('object:scaling', {
-            target: this._currentTransform.target
+            target: this._currentTransform.target,
+            e: e
           });
-          this._currentTransform.target.fire('scaling');
+          this._currentTransform.target.fire('scaling', { e: e });
         }
         else {
           this._translateObject(x, y);
 
           this.fire('object:moving', {
-            target: this._currentTransform.target
+            target: this._currentTransform.target,
+            e: e
           });
 
           this._setCursor(this.moveCursor);
 
-          this._currentTransform.target.fire('moving');
+          this._currentTransform.target.fire('moving', { e: e });
         }
         // only commit here. when we are actually moving the pictures
         this.renderAll();
       }
       this.fire('mouse:move', { target: target, e: e });
       target && target.fire('mousemove', { e: e });
+    },
+
+    /**
+     * Resets the current transform to its original values and chooses the type of resizing based on the event
+     * @method _resetCurrentTransform
+     * @param e {Event} Event object fired on mousemove
+     */
+    _resetCurrentTransform: function(e) {
+      var t = this._currentTransform;
+      t.target.set('scaleX', t.original.scaleX);
+      t.target.set('scaleY', t.original.scaleY);
+      t.target.set('left', t.original.left);
+      t.target.set('top', t.original.top);
+
+      if (e.altKey || this.centerTransform) {
+        if (t.originX !== 'center') {
+          if (t.originX === 'right') {
+            t.mouseXSign = -1;
+          }
+          else {
+            t.mouseXSign = 1;
+          }
+        }
+        if (t.originY !== 'center') {
+          if (t.originY === 'bottom') {
+            t.mouseYSign = -1;
+          }
+          else {
+            t.mouseYSign = 1;
+          }
+        }
+
+        t.originX = 'center';
+        t.originY = 'center';
+      }
+      else {
+        t.originX = t.original.originX;
+        t.originY = t.original.originY;
+      }
     },
 
     /**
@@ -562,47 +683,51 @@
       return { x: x, y: y };
     },
 
+    /**
+     * @private
+     * @method _isTargetTransparent
+     */
     _isTargetTransparent: function (target, x, y) {
-        var cacheContext = this.contextCache;
+      var cacheContext = this.contextCache;
 
-        var hasBorders = target.hasBorders, transparentCorners = target.transparentCorners;
-        target.hasBorders = target.transparentCorners = false;
+      var hasBorders = target.hasBorders, transparentCorners = target.transparentCorners;
+      target.hasBorders = target.transparentCorners = false;
 
-        this._draw(cacheContext, target);
+      this._draw(cacheContext, target);
 
-        target.hasBorders = hasBorders;
-        target.transparentCorners = transparentCorners;
+      target.hasBorders = hasBorders;
+      target.transparentCorners = transparentCorners;
 
-        // If tolerance is > 0 adjust start coords to take into account. If moves off Canvas fix to 0
-        if (this.targetFindTolerance > 0) {
-          if (x > this.targetFindTolerance) {
-            x -= this.targetFindTolerance;
-          }
-          else {
-            x = 0;
-          }
-          if (y > this.targetFindTolerance) {
-            y -= this.targetFindTolerance;
-          }
-          else {
-            y = 0;
-          }
+      // If tolerance is > 0 adjust start coords to take into account. If moves off Canvas fix to 0
+      if (this.targetFindTolerance > 0) {
+        if (x > this.targetFindTolerance) {
+          x -= this.targetFindTolerance;
         }
-
-        var isTransparent = true;
-        var imageData = cacheContext.getImageData(
-          x, y, (this.targetFindTolerance * 2) || 1, (this.targetFindTolerance * 2) || 1);
-
-        // Split image data - for tolerance > 1, pixelDataSize = 4;
-        for (var i = 3; i < imageData.data.length; i += 4) {
-            var temp = imageData.data[i];
-            isTransparent = temp <= 0;
-            if (isTransparent === false) break; //Stop if colour found
+        else {
+          x = 0;
         }
+        if (y > this.targetFindTolerance) {
+          y -= this.targetFindTolerance;
+        }
+        else {
+          y = 0;
+        }
+      }
 
-        imageData = null;
-        this.clearContext(cacheContext);
-        return isTransparent;
+      var isTransparent = true;
+      var imageData = cacheContext.getImageData(
+        x, y, (this.targetFindTolerance * 2) || 1, (this.targetFindTolerance * 2) || 1);
+
+      // Split image data - for tolerance > 1, pixelDataSize = 4;
+      for (var i = 3; i < imageData.data.length; i += 4) {
+          var temp = imageData.data[i];
+          isTransparent = temp <= 0;
+          if (isTransparent === false) break; //Stop if colour found
+      }
+
+      imageData = null;
+      this.clearContext(cacheContext);
+      return isTransparent;
     },
 
     /**
@@ -632,18 +757,39 @@
           corner,
           pointer = getPointer(e);
 
-      if ((corner = target._findTargetCorner(e, this._offset))) {
+      corner = target._findTargetCorner(e, this._offset);
+      if (corner) {
         action = (corner === 'ml' || corner === 'mr')
           ? 'scaleX'
           : (corner === 'mt' || corner === 'mb')
             ? 'scaleY'
             : corner === 'mtr'
               ? 'rotate'
-              : (target.hasRotatingPoint)
-                ? 'scale'
-                : 'rotate';
+              : 'scale';
       }
 
+      var originX = "center", originY = "center";
+
+      if (corner === 'ml' || corner === 'tl' || corner === 'bl') {
+        originX = "right";
+      }
+      else if (corner === 'mr' || corner === 'tr' || corner === 'br') {
+        originX = "left";
+      }
+
+      if (corner === 'tl' || corner === 'mt' || corner === 'tr') {
+        originY = "bottom";
+      }
+      else if (corner === 'bl' || corner === 'mb' || corner === 'br') {
+        originY = "top";
+      }
+
+      if (corner === 'mtr') {
+        originX = 'center';
+        originY = 'center';
+      }
+
+      // var center = target.getCenterPoint();
       this._currentTransform = {
         target: target,
         action: action,
@@ -651,20 +797,34 @@
         scaleY: target.scaleY,
         offsetX: pointer.x - target.left,
         offsetY: pointer.y - target.top,
+        originX: originX,
+        originY: originY,
         ex: pointer.x,
         ey: pointer.y,
         left: target.left,
         top: target.top,
         theta: degreesToRadians(target.angle),
-        width: target.width * target.scaleX
+        width: target.width * target.scaleX,
+        mouseXSign: 1,
+        mouseYSign: 1
       };
 
       this._currentTransform.original = {
         left: target.left,
-        top: target.top
+        top: target.top,
+        scaleX: target.scaleX,
+        scaleY: target.scaleY,
+        originX: originX,
+        originY: originY
       };
+
+      this._resetCurrentTransform(e);
     },
 
+    /**
+     * @private
+     * @method _handleGroupLogic
+     */
     _handleGroupLogic: function (e, target) {
       if (target === this.getActiveGroup()) {
         // if it's a group, find target again, this time skipping group
@@ -720,8 +880,13 @@
      */
     _translateObject: function (x, y) {
       var target = this._currentTransform.target;
-      target.lockMovementX || target.set('left', x - this._currentTransform.offsetX);
-      target.lockMovementY || target.set('top', y - this._currentTransform.offsetY);
+
+      if (!target.get('lockMovementX')) {
+        target.set('left', x - this._currentTransform.offsetX);
+      }
+      if (!target.get('lockMovementY')) {
+        target.set('top', y - this._currentTransform.offsetY);
+      }
     },
 
     /**
@@ -737,23 +902,88 @@
           offset = this._offset,
           target = t.target;
 
-      if (target.lockScalingX && target.lockScalingY) return;
+      var lockScalingX = target.get('lockScalingX'),
+          lockScalingY = target.get('lockScalingY');
 
-      var lastLen = sqrt(pow(t.ey - t.top - offset.top, 2) + pow(t.ex - t.left - offset.left, 2)),
-          curLen = sqrt(pow(y - t.top - offset.top, 2) + pow(x - t.left - offset.left, 2));
+      if (lockScalingX && lockScalingY) return;
 
-      target._scaling = true;
+      // Get the constraint point
+      var constraintPosition = target.translateToOriginPoint(target.getCenterPoint(), t.originX, t.originY);
+      var localMouse = target.toLocalPoint(new fabric.Point(x - offset.left, y - offset.top), t.originX, t.originY);
 
-      if (!by) {
-        target.lockScalingX || target.set('scaleX', t.scaleX * curLen/lastLen);
-        target.lockScalingY || target.set('scaleY', t.scaleY * curLen/lastLen);
+      if (t.originX === 'right') {
+        localMouse.x *= -1;
       }
-      else if (by === 'x' && !target.lockUniScaling) {
-        target.lockScalingX || target.set('scaleX', t.scaleX * curLen/lastLen);
+      else if (t.originX === 'center') {
+        localMouse.x *= t.mouseXSign * 2;
+
+        if (localMouse.x < 0) {
+          t.mouseXSign = -t.mouseXSign;
+        }
       }
-      else if (by === 'y' && !target.lockUniScaling) {
-        target.lockScalingY || target.set('scaleY', t.scaleY * curLen/lastLen);
+
+      if (t.originY === 'bottom') {
+        localMouse.y *= -1;
       }
+      else if (t.originY === 'center') {
+        localMouse.y *= t.mouseYSign * 2;
+
+        if (localMouse.y < 0) {
+          t.mouseYSign = -t.mouseYSign;
+        }
+      }
+
+      // Actually scale the object
+      var newScaleX = target.scaleX, newScaleY = target.scaleY;
+      if (by === 'equally' && !lockScalingX && !lockScalingY) {
+        var dist = localMouse.y + localMouse.x;
+        var lastDist = (target.height) * t.original.scaleY +
+                       (target.width) * t.original.scaleX +
+                       (target.padding * 2) -
+                       (target.strokeWidth * 2) + 1 /* additional offset needed probably due to subpixel rendering, and avoids jerk when scaling an object */;
+
+        // We use t.scaleX/Y instead of target.scaleX/Y because the object may have a min scale and we'll loose the proportions
+        newScaleX = t.original.scaleX * dist/lastDist;
+        newScaleY = t.original.scaleY * dist/lastDist;
+
+        target.set('scaleX', newScaleX);
+        target.set('scaleY', newScaleY);
+      }
+      else if (!by) {
+        newScaleX = localMouse.x/(target.width+target.padding);
+        newScaleY = localMouse.y/(target.height+target.padding);
+
+        lockScalingX || target.set('scaleX', newScaleX);
+        lockScalingY || target.set('scaleY', newScaleY);
+      }
+      else if (by === 'x' && !target.get('lockUniScaling')) {
+        newScaleX = localMouse.x/(target.width+target.padding);
+        lockScalingX || target.set('scaleX', newScaleX);
+      }
+      else if (by === 'y' && !target.get('lockUniScaling')) {
+        newScaleY = localMouse.y/(target.height+target.padding);
+        lockScalingY || target.set('scaleY', newScaleY);
+      }
+
+      // Check if we flipped
+      if (newScaleX < 0)
+      {
+        if (t.originX === 'left')
+          t.originX = 'right';
+        else if (t.originX === 'right')
+          t.originX = 'left';
+      }
+
+      if (newScaleY < 0)
+      {
+        if (t.originY === 'top')
+          t.originY = 'bottom';
+        else if (t.originY === 'bottom')
+          t.originY = 'top';
+      }
+
+      // Make sure the constraints apply
+      target.setPositionByOrigin(constraintPosition, t.originX, t.originY);
     },
 
     /**
@@ -767,7 +997,7 @@
       var t = this._currentTransform,
           o = this._offset;
 
-      if (t.target.lockRotation) return;
+      if (t.target.get('lockRotation')) return;
 
       var lastAngle = atan2(t.ey - t.top - o.top, t.ex - t.left - o.left),
           curAngle = atan2(y - t.top - o.top, x - t.left - o.left);
@@ -874,26 +1104,26 @@
         );
       }
     },
-  
-    /*
+
+    /**
      * Draws a dashed line between two points
      *
-     * this method is used to draw dashed line around selection area.
-     * http://stackoverflow.com/questions/4576724/dotted-stroke-in-canvas
+     * This method is used to draw dashed line around selection area.
+     * See <a href="http://stackoverflow.com/questions/4576724/dotted-stroke-in-canvas">dotted stroke in canvas</a>
      *
      * @method drawDashedLine
      * @param ctx {Canvas} context
-     * @param x {number} start x coordinate
-     * @param y {number} start y coordinate
-     * @param x2 {number} end x coordinate
-     * @param y2 {number} end y coordinate
+     * @param x {Number} start x coordinate
+     * @param y {Number} start y coordinate
+     * @param x2 {Number} end x coordinate
+     * @param y2 {Number} end y coordinate
      * @param da {Array} dash array pattern
      */
     drawDashedLine: function(ctx, x, y, x2, y2, da) {
       var dx = x2 - x,
           dy = y2 - y,
-          len = Math.sqrt(dx*dx + dy*dy),
-          rot = Math.atan2(dy, dx),
+          len = sqrt(dx*dx + dy*dy),
+          rot = atan2(dy, dx),
           dc = da.length,
           di = 0,
           draw = true;
@@ -916,7 +1146,10 @@
       ctx.restore();
     },
 
-
+    /**
+     * @private
+     * @method _findSelectedObjects
+     */
     _findSelectedObjects: function (e) {
       var group = [ ],
           x1 = this._groupSelector.ex,
@@ -1013,6 +1246,7 @@
     /**
      * Returns pointer coordinates relative to canvas.
      * @method getPointer
+     * @param {Event} e
      * @return {Object} object with "x" and "y" number values
      */
     getPointer: function (e) {
@@ -1024,6 +1258,7 @@
     },
 
     /**
+     * @private
      * @method _createUpperCanvas
      * @param {HTMLElement|String} canvasEl Canvas element
      * @throws {CANVAS_INIT_ERROR} If canvas can not be initialized
@@ -1038,6 +1273,10 @@
       this.contextTop = this.upperCanvasEl.getContext('2d');
     },
 
+    /**
+     * @private
+     * @method _createCacheCanvas
+     */
     _createCacheCanvas: function () {
       this.cacheCanvasEl = this._createCanvasElement();
       this.cacheCanvasEl.setAttribute('width', this.width);
@@ -1216,6 +1455,51 @@
         this.fire('selection:cleared');
       }
       return this;
+    },
+
+    /**
+     * @private
+     * @method _adjustPosition
+     * @param obj
+     * @param {String} to One of left, center, right
+     */
+    _adjustPosition: function(obj, to) {
+
+      var angle = fabric.util.degreesToRadians(obj.angle);
+
+      var hypotHalf = obj.getWidth() / 2;
+      var xHalf = Math.cos(angle) * hypotHalf;
+      var yHalf = Math.sin(angle) * hypotHalf;
+
+      var hypotFull = obj.getWidth();
+      var xFull = Math.cos(angle) * hypotFull;
+      var yFull = Math.sin(angle) * hypotFull;
+
+      if (obj.originX === 'center' && to === 'left' ||
+          obj.originX === 'right' && to === 'center') {
+        // move half left
+        obj.left -= xHalf;
+        obj.top -= yHalf;
+      }
+      else if (obj.originX === 'left' && to === 'center' ||
+               obj.originX === 'center' && to === 'right') {
+        // move half right
+        obj.left += xHalf;
+        obj.top += yHalf;
+      }
+      else if (obj.originX === 'left' && to === 'right') {
+        // move full right
+        obj.left += xFull;
+        obj.top += yFull;
+      }
+      else if (obj.originX === 'right' && to === 'left') {
+        // move full left
+        obj.left -= xFull;
+        obj.top -= yFull;
+      }
+
+      obj.setCoords();
+      obj.originX = to;
     }
   };
 
@@ -1242,4 +1526,3 @@
    */
   fabric.Element = fabric.Canvas;
 })();
-

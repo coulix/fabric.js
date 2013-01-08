@@ -11,12 +11,14 @@
   }
 
   /**
+   * Polyline class
    * @class Polyline
    * @extends fabric.Object
    */
   fabric.Polyline = fabric.util.createClass(fabric.Object, /** @scope fabric.Polyline.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -47,16 +49,17 @@
     /**
      * Returns object representation of an instance
      * @method toObject
-     * @return {Object} Object representation of an instance
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return fabric.Polygon.prototype.toObject.call(this);
+    toObject: function(propertiesToInclude) {
+      return fabric.Polygon.prototype.toObject.call(this, propertiesToInclude);
     },
 
     /**
-     * Returns svg representation of an instance
+     * Returns SVG representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       var points = [];

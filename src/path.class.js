@@ -152,12 +152,14 @@
   }
 
   /**
+   * Path class
    * @class Path
    * @extends fabric.Object
    */
   fabric.Path = fabric.util.createClass(fabric.Object, /** @scope fabric.Path.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -203,7 +205,9 @@
      */
     _initializePath: function (options) {
       var isWidthSet = 'width' in options,
-          isHeightSet = 'height' in options;
+          isHeightSet = 'height' in options,
+          isLeftSet = 'left' in options,
+          isTopSet = 'top' in options;
 
       if (!isWidthSet || !isHeightSet) {
         extend(this, this._parseDimensions());
@@ -214,21 +218,25 @@
           this.height = options.height;
         }
       }
-      else { //Set center location relative to given height/width
-        this.left = this.width / 2;
-        this.top = this.height / 2;
+      else { //Set center location relative to given height/width if not specified
+        if (!isTopSet) {
+          this.top = this.height / 2;
+        }
+        if (!isLeftSet) {
+          this.left = this.width / 2;
+        }
       }
-      this.pathOffset = this._calculatePathOffset(); //Save top-left coords as offset
+      this.pathOffset = this._calculatePathOffset(isTopSet || isLeftSet); //Save top-left coords as offset
     },
 
     /**
      * @private
      * @method _calculatePathOffset
      */
-    _calculatePathOffset: function () {
+    _calculatePathOffset: function (positionSet) {
       return {
-        x: this.left - (this.width / 2),
-        y: this.top - (this.height / 2)
+        x: positionSet ? 0 : this.left - (this.width / 2),
+        y: positionSet ? 0 : this.top - (this.height / 2)
       };
     },
 
@@ -576,10 +584,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
-     * @return {Object}
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      var o = extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      var o = extend(this.callSuper('toObject', propertiesToInclude), {
         path: this.path
       });
       if (this.sourcePath) {
@@ -594,10 +603,11 @@
     /**
      * Returns dataless object representation of an instance
      * @method toDatalessObject
-     * @return {Object}
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toDatalessObject: function() {
-      var o = this.toObject();
+    toDatalessObject: function(propertiesToInclude) {
+      var o = this.toObject(propertiesToInclude);
       if (this.sourcePath) {
         o.path = this.sourcePath;
       }
@@ -608,7 +618,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       var chunks = [];
@@ -618,7 +628,7 @@
       var path = chunks.join(' ');
 
       return [
-        '<g transform="', this.getSvgTransform(), '">',
+        '<g transform="', (this.group ? '' : this.getSvgTransform()), '">',
           '<path ',
             'width="', this.width, '" height="', this.height, '" ',
             'd="', path, '" ',
@@ -769,7 +779,7 @@
    * @static
    * @method fabric.Path.fromElement
    * @param {SVGElement} element to parse
-   * @param {Object} options object
+   * @param {Object} [options] Options object
    * @return {fabric.Path} Instance of fabric.Path
    */
   fabric.Path.fromElement = function(element, options) {

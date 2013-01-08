@@ -24,14 +24,17 @@
   }
 
   /**
+   * Gradient class
    * @class Gradient
    * @memberOf fabric
    */
   fabric.Gradient = fabric.util.createClass(/** @scope fabric.Gradient.prototype */ {
 
     /**
+     * Constructor
      * @method initialize
-     * @param options optional Options with x1, y1, x2, y2 and colorStops
+     * @param [options] Options object with x1, y1, x2, y2 and colorStops
+     * @return {fabric.Gradient} thisArg
      */
     initialize: function(options) {
 
@@ -48,6 +51,7 @@
     /**
      * Returns object representation of a gradient
      * @method toObject
+     * @return {Object}
      */
     toObject: function() {
       return {
@@ -63,6 +67,7 @@
      * Returns an instance of CanvasGradient
      * @method toLiveGradient
      * @param ctx
+     * @return {CanvasGradient}
      */
     toLiveGradient: function(ctx) {
       var gradient = ctx.createLinearGradient(
@@ -80,6 +85,7 @@
   fabric.util.object.extend(fabric.Gradient, {
 
     /**
+     * Returns {@link fabric.Gradient} instance from an SVG element
      * @method fromElement
      * @static
      * @memberof fabric.Gradient
@@ -135,8 +141,11 @@
     },
 
     /**
+     * Returns {@link fabric.Gradient} instance from its object representation
      * @method forObject
      * @static
+     * @param obj
+     * @param [options]
      * @memberof fabric.Gradient
      */
     forObject: function(obj, options) {
@@ -151,18 +160,18 @@
       if (typeof options[prop] === 'string' && /^\d+%$/.test(options[prop])) {
         var percents = parseFloat(options[prop], 10);
         if (prop === 'x1' || prop === 'x2') {
-          options[prop] = object.width * percents / 100;
+          options[prop] = fabric.util.toFixed(object.width * percents / 100, 2);
         }
         else if (prop === 'y1' || prop === 'y2') {
-          options[prop] = object.height * percents / 100;
+          options[prop] = fabric.util.toFixed(object.height * percents / 100, 2);
         }
       }
       // normalize rendering point (should be from top/left corner rather than center of the shape)
       if (prop === 'x1' || prop === 'x2') {
-        options[prop] -= object.width / 2;
+        options[prop] -= fabric.util.toFixed(object.width / 2, 2);
       }
       else if (prop === 'y1' || prop === 'y2') {
-        options[prop] -= object.height / 2;
+        options[prop] -= fabric.util.toFixed(object.height / 2, 2);
       }
     }
   }
