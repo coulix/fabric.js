@@ -6613,6 +6613,27 @@ fabric.util.string = {
     initialize: function(fabricCanvas) {
       this.canvas = fabricCanvas;
       this._points = [];
+      this._color = this.canvas.freeDrawingColor;
+      this._strokeWidth = this.canvas.freeDrawingLineWidth;
+    },
+
+    /**
+     * Set path color
+     * @method setColor
+     * @param color {String/rgb/rgba}
+     *
+     */
+    setColor: function(color) {
+        this._color = color;
+    },
+
+    /**
+     * Set path thichness (strokeWidth)
+     * @method setThickness
+     * @param thickness {int}
+     */
+    setThickness: function(thickness) {
+      this._strokeWidth = thickness;
     },
 
     /**
@@ -6637,8 +6658,8 @@ fabric.util.string = {
       var ctx = this.canvas.contextTop;
 
       // set freehanddrawing line canvas parameters
-      ctx.strokeStyle = this.canvas.freeDrawingColor;
-      ctx.lineWidth = this.canvas.freeDrawingLineWidth;
+      ctx.strokeStyle = this._color;
+      ctx.lineWidth = this._strokeWidth;
       ctx.lineCap = ctx.lineJoin = 'round';
     },
 
@@ -6663,15 +6684,9 @@ fabric.util.string = {
      * @param point {pointer} (fabric.util.pointer) actual mouse position
      *   related to the canvas.
      */
-<<<<<<< HEAD
-     _captureDrawingPath: function(pointer) {
-       var pointerPoint = new fabric.Point(pointer.x, pointer.y); 
-       this._addPoint(pointerPoint);
-=======
     _captureDrawingPath: function(pointer) {
       var pointerPoint = new fabric.Point(pointer.x, pointer.y);
       this._addPoint(pointerPoint);
->>>>>>> kangax_master
     },
 
     /**
@@ -6793,38 +6808,6 @@ fabric.util.string = {
      * @method _finalizeAndAddPath
      */
     _finalizeAndAddPath: function() {
-<<<<<<< HEAD
-        var ctx = this.canvas.contextTop;
-        ctx.closePath();
-        var path = this._getSVGPathData();
-        path = path.join('');
-        var thickness = this._strokeWidth / 2;
-
-        // detect points
-        if (path === "M 0 0 Q 0 0 0 0 L 0 0 ") {
-            // 0 width/height paths, as they are
-            // rendered inconsistently across browsers
-            // we draw a dot shaped like curve instead.
-            path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
-        }
-
-        var p = new fabric.Path(path);
-        p.fill = null;
-        p.stroke = this._color;
-        p.strokeWidth = this._strokeWidth;
-        p.type = 'pen';
-        this.canvas.add(p);
-
-        // set path origin coordinates based on our bouding box
-        var originLeft = this.box.minx  + (this.box.maxx - this.box.minx) /2;
-        var originTop = this.box.miny  + (this.box.maxy - this.box.miny) /2;
-
-        p.set("left", originLeft);
-        p.set("top", originTop)
-        // does not change position 
-        p.setCoords();
- 
-=======
       this.canvas._isCurrentlyDrawing = false;
       var ctx = this.canvas.contextTop;
       ctx.closePath();
@@ -6836,15 +6819,15 @@ fabric.util.string = {
         // rendered inconsistently across browsers
         // Firefox 4, for example, renders a dot,
         // whereas Chrome 10 renders nothing
->>>>>>> kangax_master
         this.canvas.renderAll();
         return;
       }
 
       var p = new fabric.Path(path);
       p.fill = null;
-      p.stroke = this.canvas.freeDrawingColor;
-      p.strokeWidth = this.canvas.freeDrawingLineWidth;
+      p.stroke = this._color;
+      p.strokeWidth = this._strokeWidth;
+      p.type = "pen"
       this.canvas.add(p);
 
       // set path origin coordinates based on our bounding box
@@ -6939,14 +6922,6 @@ fabric.util.string = {
      */
     interactive:            true,
 
-<<<<<<< HEAD
-    /**
-     * Default dash array pattern
-     * If not empty the selection border should be dashed
-     * @property
-     * @type Array
-     */ 
-=======
     /**
      * Indicates whether group selection should be enabled
      * @property
@@ -6967,7 +6942,6 @@ fabric.util.string = {
      * @property
      * @type Array
      */
->>>>>>> kangax_master
     selectionDashArray:      [ ],
 
     /**
@@ -7982,13 +7956,8 @@ fabric.util.string = {
         );
       }
     },
-<<<<<<< HEAD
-  
-    /*
-=======
 
     /**
->>>>>>> kangax_master
      * Draws a dashed line between two points
      *
      * This method is used to draw dashed line around selection area.
@@ -8029,14 +7998,10 @@ fabric.util.string = {
       ctx.restore();
     },
 
-<<<<<<< HEAD
-
-=======
     /**
      * @private
      * @method _findSelectedObjects
      */
->>>>>>> kangax_master
     _findSelectedObjects: function (e) {
       var group = [ ],
           x1 = this._groupSelector.ex,
@@ -8413,11 +8378,7 @@ fabric.util.string = {
    */
   fabric.Element = fabric.Canvas;
 })();
-<<<<<<< HEAD
 
-
-=======
->>>>>>> kangax_master
 fabric.util.object.extend(fabric.StaticCanvas.prototype, {
 
   /**

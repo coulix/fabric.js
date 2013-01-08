@@ -31,6 +31,27 @@
     initialize: function(fabricCanvas) {
       this.canvas = fabricCanvas;
       this._points = [];
+      this._color = this.canvas.freeDrawingColor;
+      this._strokeWidth = this.canvas.freeDrawingLineWidth;
+    },
+
+    /**
+     * Set path color
+     * @method setColor
+     * @param color {String/rgb/rgba}
+     *
+     */
+    setColor: function(color) {
+        this._color = color;
+    },
+
+    /**
+     * Set path thichness (strokeWidth)
+     * @method setThickness
+     * @param thickness {int}
+     */
+    setThickness: function(thickness) {
+      this._strokeWidth = thickness;
     },
 
     /**
@@ -55,8 +76,8 @@
       var ctx = this.canvas.contextTop;
 
       // set freehanddrawing line canvas parameters
-      ctx.strokeStyle = this.canvas.freeDrawingColor;
-      ctx.lineWidth = this.canvas.freeDrawingLineWidth;
+      ctx.strokeStyle = this._color;
+      ctx.lineWidth = this._strokeWidth;
       ctx.lineCap = ctx.lineJoin = 'round';
     },
 
@@ -222,8 +243,9 @@
 
       var p = new fabric.Path(path);
       p.fill = null;
-      p.stroke = this.canvas.freeDrawingColor;
-      p.strokeWidth = this.canvas.freeDrawingLineWidth;
+      p.stroke = this._color;
+      p.strokeWidth = this._strokeWidth;
+      p.type = "pen"
       this.canvas.add(p);
 
       // set path origin coordinates based on our bounding box
