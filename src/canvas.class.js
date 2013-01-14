@@ -1165,7 +1165,7 @@
 
         if (!currentObject) continue;
 
-        if (currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
+        if (/*currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||*/
             currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)) {
 
           if (this.selection && currentObject.selectable) {
