@@ -1181,6 +1181,7 @@
       }
       else if (group.length > 1) {
         group = new fabric.Group(group);
+
         this.setActiveGroup(group);
         group.saveCoords();
         this.fire('selection:created', { target: group });
@@ -1202,7 +1203,7 @@
 
       if (this.controlsAboveOverlay &&
           this.lastRenderedObjectWithControlsAboveOverlay &&
-          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay)) {
+          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay)){
         target = this.lastRenderedObjectWithControlsAboveOverlay;
         return target;
       }

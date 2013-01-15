@@ -8017,7 +8017,7 @@ fabric.util.string = {
 
         if (!currentObject) continue;
 
-        if (currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||
+        if (/*currentObject.intersectsWithRect(selectionX1Y1, selectionX2Y2) ||*/
             currentObject.isContainedWithinRect(selectionX1Y1, selectionX2Y2)) {
 
           if (this.selection && currentObject.selectable) {
@@ -8033,6 +8033,7 @@ fabric.util.string = {
       }
       else if (group.length > 1) {
         group = new fabric.Group(group);
+
         this.setActiveGroup(group);
         group.saveCoords();
         this.fire('selection:created', { target: group });
@@ -8054,7 +8055,7 @@ fabric.util.string = {
 
       if (this.controlsAboveOverlay &&
           this.lastRenderedObjectWithControlsAboveOverlay &&
-          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay)) {
+          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay)){
         target = this.lastRenderedObjectWithControlsAboveOverlay;
         return target;
       }
@@ -9785,7 +9786,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       ctx.save();
 
       ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
-      ctx.strokeStyle = this.borderColor;
+      //ctx.strokeStyle = this.borderColor;
+      ctx.strokeStyle = "#222222";
 
       var scaleX = 1 / this._constrainScale(this.scaleX),
           scaleY = 1 / this._constrainScale(this.scaleY);
@@ -9797,6 +9799,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       var w = this.getWidth(),
           h = this.getHeight();
 
+      //ctx.strokeStyle = 'rgba(41,41,41,0.7)';
       ctx.strokeRect(
         ~~(-(w / 2) - padding - strokeWidth / 2 * this.scaleX) + 0.5, // offset needed to make lines look sharper
         ~~(-(h / 2) - padding - strokeWidth / 2 * this.scaleY) + 0.5,
@@ -9894,6 +9897,10 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
      * @chainable
      */
     drawCorners: function(ctx) {
+      // Force corners to be shown in any cases
+      this.transparentCorners = false;
+      this.cornerSize = 10;
+
       if (!this.hasControls) return;
 
       var size = this.cornerSize,
@@ -9921,8 +9928,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       ctx.lineWidth = 1 / Math.max(this.scaleX, this.scaleY);
 
       ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
-      ctx.strokeStyle = ctx.fillStyle = this.cornerColor;
-
+      ctx.strokeStyle = ctx.fillStyle = '#222222';
       // top-left
       _left = left - scaleOffsetX - strokeWidth2 - paddingX;
       _top = top - scaleOffsetY - strokeWidth2 - paddingY;
@@ -13552,6 +13558,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   fabric.Group.async = true;
 
 })(typeof exports !== 'undefined' ? exports : this);
+
 (function(global) {
 
   "use strict";

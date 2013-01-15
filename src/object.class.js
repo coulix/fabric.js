@@ -1007,7 +1007,8 @@
       ctx.save();
 
       ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
-      ctx.strokeStyle = this.borderColor;
+      //ctx.strokeStyle = this.borderColor;
+      ctx.strokeStyle = "#222222";
 
       var scaleX = 1 / this._constrainScale(this.scaleX),
           scaleY = 1 / this._constrainScale(this.scaleY);
@@ -1019,6 +1020,7 @@
       var w = this.getWidth(),
           h = this.getHeight();
 
+      //ctx.strokeStyle = 'rgba(41,41,41,0.7)';
       ctx.strokeRect(
         ~~(-(w / 2) - padding - strokeWidth / 2 * this.scaleX) + 0.5, // offset needed to make lines look sharper
         ~~(-(h / 2) - padding - strokeWidth / 2 * this.scaleY) + 0.5,
@@ -1116,6 +1118,10 @@
      * @chainable
      */
     drawCorners: function(ctx) {
+      // Force corners to be shown in any cases
+      this.transparentCorners = false;
+      this.cornerSize = 10;
+
       if (!this.hasControls) return;
 
       var size = this.cornerSize,
@@ -1143,8 +1149,7 @@
       ctx.lineWidth = 1 / Math.max(this.scaleX, this.scaleY);
 
       ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
-      ctx.strokeStyle = ctx.fillStyle = this.cornerColor;
-
+      ctx.strokeStyle = ctx.fillStyle = '#222222';
       // top-left
       _left = left - scaleOffsetX - strokeWidth2 - paddingX;
       _top = top - scaleOffsetY - strokeWidth2 - paddingY;
