@@ -8726,13 +8726,9 @@ fabric.util.string = {
       var path = this._getSVGPathData();
       path = path.join('');
 
-      if (path === "M 0 0 Q 0 0 0 0 L 0 0") {
-        // do not create 0 width/height paths, as they are
-        // rendered inconsistently across browsers
-        // Firefox 4, for example, renders a dot,
-        // whereas Chrome 10 renders nothing
-        this.canvas.renderAll();
-        return;
+      var thickness = this._strokeWidth / 2;
+      if (path === "M 0 0 Q 0 0 0 0 L 0 0 ") {
+        path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
       }
 
       var p = new fabric.Path(path);
