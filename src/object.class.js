@@ -642,7 +642,7 @@
 
       if (this.active && !noTransform) {
         this.drawBorders(ctx);
-        this.drawCorners(ctx);
+        this.hideCorners || this.drawCorners(ctx);
       }
       ctx.restore();
     },
@@ -1276,7 +1276,7 @@
     /**
      * Converts an object into a data-url-like string
      * @method toDataURL
-     * @return {String} string of data
+     * @param callback {Function} callback that recieves resulting data-url string
      */
     toDataURL: function(callback) {
       var el = fabric.document.createElement('canvas');
@@ -1831,7 +1831,13 @@
       var obj = this;
 
       to = to.toString();
-      options || (options = { });
+
+      if (!options) {
+        options = { };
+      }
+      else {
+        options = fabric.util.object.clone(options);
+      }
 
       if (!('from' in options)) {
         options.from = this.get(property);

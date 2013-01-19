@@ -213,7 +213,8 @@
       replacement.height = imgEl.height;
 
       if (isLikelyNode) {
-        var base64str = canvasEl.toDataURL('image/png').replace(/data:image\/png;base64,/, '');
+        // cut off data:image/png;base64, part in the beginning
+        var base64str = canvasEl.toDataURL('image/png').substring(22);
         replacement.src = new Buffer(base64str, 'base64');
         _this._element = replacement;
 
@@ -356,7 +357,7 @@
       };
 
       /** @ignore */
-      img.onerror = function(e) {
+      img.onerror = function() {
         fabric.log('Error loading ' + img.src);
         callback && callback(null, true);
         img = img.onload = img.onerror = null;

@@ -142,6 +142,13 @@
     defaultCursor:          'default',
 
     /**
+     * Cursor value used during free drawing
+     * @property
+     * @type String
+     */
+    freeDrawingCursor:      'crosshair',
+
+    /**
      * Cursor value used for rotation point
      * @property
      * @type String
@@ -233,6 +240,12 @@
       if (fabric.isTouchSupported) {
         addListener(this.upperCanvasEl, 'touchstart', this._onMouseDown);
         addListener(this.upperCanvasEl, 'touchmove', this._onMouseMove);
+
+        if (typeof Event !== 'undefined' && 'add' in Event) {
+          Event.add(this.upperCanvasEl, 'gesture', function(e, s) {
+            _this.__onTransformGesture(e, s);
+          });
+        }
       }
       else {
         addListener(this.upperCanvasEl, 'mousedown', this._onMouseDown);
@@ -435,6 +448,7 @@
           this.clearContext(this.contextTop);
           this.freeDrawing._render(this.contextTop);
         }
+        this.upperCanvasEl.style.cursor = this.freeDrawingCursor;
         this.fire('mouse:move', { e: e });
         return;
       }
@@ -1203,7 +1217,8 @@
 
       if (this.controlsAboveOverlay &&
           this.lastRenderedObjectWithControlsAboveOverlay &&
-          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay)){
+          this.containsPoint(e, this.lastRenderedObjectWithControlsAboveOverlay) &&
+          this.lastRenderedObjectWithControlsAboveOverlay._findTargetCorner(e, this._offset)) {
         target = this.lastRenderedObjectWithControlsAboveOverlay;
         return target;
       }
