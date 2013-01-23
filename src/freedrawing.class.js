@@ -117,26 +117,29 @@
      */
     _render: function() {
       var ctx  = this.canvas.contextTop;
+      var ppts = this._points;
+      var p1 = ppts[0];
+      var p2 = ppts[1];
+
       ctx.beginPath();
-
-      var p1 = this._points[0];
-      var p2 = this._points[1];
-
       ctx.moveTo(p1.x, p1.y);
 
-      for (var i = 1, len = this._points.length; i < len; i++) {
+      for (var i = 1, len = this._points.length - 2; i < len; i++) {
         // we pick the point between pi+1 & pi+2 as the
         // end point and p1 as our control point.
-        var midPoint = p1.midPointFrom(p2);
-        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
-
-        p1 = this._points[i];
-        p2 = this._points[i+1];
+        var c = (ppts[i].x + ppts[i + 1].x) / 2;
+        var d = (ppts[i].y + ppts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(ppts[i].x, ppts[i].y, c, d);
+        
       }
-      // Draw last line as a straight line while
-      // we wait for the next point to be able to calculate
-      // the bezier control point
-      ctx.lineTo(p1.x, p1.y);
+      
+      // For the last 2 points
+      ctx.quadraticCurveTo(
+          ppts[i].x,
+          ppts[i].y,
+          ppts[i + 1].x,
+          ppts[i + 1].y
+      );
       ctx.stroke();
     },
 

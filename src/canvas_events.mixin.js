@@ -281,8 +281,10 @@
           this.clearContext(this.contextTop);
           this.freeDrawing._render(this.contextTop);
         }
-        this.upperCanvasEl.style.cursor = this.freeDrawingCursor;
-        this.fire('mouse:move', { e: e });
+        else {
+            this.upperCanvasEl.style.cursor = this.freeDrawingCursor;
+            this.fire('mouse:move', { e: e });
+        } 
         return;
       }
 
