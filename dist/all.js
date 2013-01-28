@@ -8811,6 +8811,7 @@ fabric.util.string = {
       // does not change position
       p.setCoords();
 
+      this.canvas.contextTop && this.canvas.clearContext(this.canvas.contextTop);
       this.canvas.renderAll();
 
       // fire event 'path' created
