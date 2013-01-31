@@ -232,12 +232,8 @@
      * @param {HTMLElement} element
      */
     _initCanvasElement: function(element) {
-      if (typeof element.getContext === 'undefined' &&
-          typeof G_vmlCanvasManager !== 'undefined' &&
-          G_vmlCanvasManager.initElement) {
+      fabric.util.createCanvasElement(element);
 
-        G_vmlCanvasManager.initElement(element);
-      }
       if (typeof element.getContext === 'undefined') {
         throw CANVAS_INIT_ERROR;
       }
@@ -510,6 +506,7 @@
       if (this.contextTop) {
         this.clearContext(this.contextTop);
       }
+      this.fire('canvas:cleared');
       this.renderAll();
       return this;
     },
@@ -533,6 +530,8 @@
         this.clearContext(canvasToDrawOn);
       }
 
+      this.fire('before:render');
+
       if (this.clipTo) {
         this._clipCanvas(canvasToDrawOn);
       }
@@ -545,8 +544,6 @@
       if (typeof this.backgroundImage === 'object') {
         this._drawBackroundImage(canvasToDrawOn);
       }
-
-      this.fire('before:render');
 
       var activeGroup = this.getActiveGroup();
       for (var i = 0, length = this._objects.length; i < length; ++i) {
@@ -687,6 +684,8 @@
       var data = (fabric.StaticCanvas.supports('toDataURLWithQuality'))
                    ? canvasEl.toDataURL('image/' + format, quality)
                    : canvasEl.toDataURL('image/' + format);
+
+      this.contextTop && this.clearContext(this.contextTop);
       this.renderAll();
       return data;
     },
@@ -740,6 +739,7 @@
         this.setActiveObject(activeObject);
       }
 
+      this.contextTop && this.clearContext(this.contextTop);
       this.renderAll();
 
       return dataURL;
@@ -959,14 +959,22 @@
      * @return {Object} removed object
      */
     remove: function (object) {
-      removeFromArray(this._objects, object);
+      // removing active object should fire "selection:cleared" events
       if (this.getActiveObject() === object) {
-
-        // removing active object should fire "selection:cleared" events
         this.fire('before:selection:cleared', { target: object });
         this.discardActiveObject();
         this.fire('selection:cleared');
       }
+
+      var objects = this._objects;
+      var index = objects.indexOf(object);
+
+      // removing any object should fire "objct:removed" events
+      if (index !== -1) {
+        objects.splice(index,1);
+        this.fire('object:removed', { target: object });
+      }
+
       this.renderAll();
       return object;
     },
@@ -1191,11 +1199,8 @@
      *                          `null` if canvas element or context can not be initialized
      */
     supports: function (methodName) {
-      var el = fabric.document.createElement('canvas');
+      var el = fabric.util.createCanvasElement();
 
-      if (typeof G_vmlCanvasManager !== 'undefined') {
-        G_vmlCanvasManager.initElement(el);
-      }
       if (!el || !el.getContext) {
         return null;
       }
