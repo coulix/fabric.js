@@ -392,7 +392,7 @@
     drawCorners: function(ctx) {
       if (!this.hasControls) return;
       this.transparentCorners = false;
-      this.cornerSize = 10;
+      this.cornerSize = 12;
       var size = this.cornerSize,
           size2 = size / 2,
           strokeWidth2 = this.strokeWidth / 2,
