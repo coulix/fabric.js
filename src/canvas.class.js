@@ -339,7 +339,7 @@
     _setupCurrentTransform: function (e, target) {
       var action = 'drag',
           corner,
-          pointer = getPointer(e);
+          pointer = getPointer(e, target.canvas.upperCanvasEl);
 
       corner = target._findTargetCorner(e, this._offset);
       if (corner) {
@@ -775,12 +775,12 @@
      * @return {Object} object with "x" and "y" number values
      */
     getPointer: function (e) {
-                    var pointer = getPointer(e);
-                    return {
-                        x: pointer.x - this._offset.left,
-                            y: pointer.y - this._offset.top
-                    };
-                },
+      var pointer = getPointer(e, this.upperCanvasEl);
+      return {
+        x: pointer.x - this._offset.left,
+        y: pointer.y - this._offset.top
+      };
+    },
 
     /**
      * @private

@@ -31,11 +31,11 @@
   fabric.Object = fabric.util.createClass(/** @scope fabric.Object.prototype */ {
 
     /**
-     * Type of an object (rect, circle, path, etc)
+     * Type of an object (rect, circle, path, etc.)
      * @property
      * @type String
      */
-    type:                       'object',
+    type:                     'object',
 
     /**
      * Horizontal origin of transformation of an object (one of "left", "right", "center")
@@ -199,6 +199,13 @@
     strokeDashArray:          null,
 
     /**
+     * Shadow object representing shadow of this shape
+     * @property
+     * @type fabric.Shadow
+     */
+    shadow:                   null,
+
+    /**
      * Border opacity when object is active and moving
      * @property
      * @type Number
@@ -285,7 +292,7 @@
       'top left width height scaleX scaleY flipX flipY ' +
       'angle opacity cornerSize fill overlayFill originX originY ' +
       'stroke strokeWidth strokeDashArray fillRule ' +
-      'borderScaleFactor transformMatrix selectable'
+      'borderScaleFactor transformMatrix selectable shadow'
     ).split(' '),
 
     /**
@@ -300,6 +307,39 @@
     },
 
     /**
+     * @private
+     * @method _initGradient
+     */
+    _initGradient: function(options) {
+      if (options.fill && options.fill.colorStops && !(options.fill instanceof fabric.Gradient)) {
+        this.set('fill', new fabric.Gradient(options.fill));
+      }
+    },
+
+    /**
+     * @private
+     * @method _initPattern
+     */
+    _initPattern: function(options) {
+      if (options.fill && options.fill.source && !(options.fill instanceof fabric.Pattern)) {
+        this.set('fill', new fabric.Pattern(options.fill));
+      }
+      if (options.stroke && options.stroke.source && !(options.stroke instanceof fabric.Pattern)) {
+        this.set('stroke', new fabric.Pattern(options.stroke));
+      }
+    },
+
+    /**
+     * @private
+     * @method _initShadow
+     */
+    _initShadow: function(options) {
+      if (options.shadow && !(options.shadow instanceof fabric.Shadow)) {
+        this.setShadow(options.shadow);
+      }
+    },
+
+    /**
      * Sets object's properties from options
      * @method setOptions
      * @param {Object} [options]
@@ -309,6 +349,8 @@
         this.set(prop, options[prop]);
       }
       this._initGradient(options);
+      this._initPattern(options);
+      this._initShadow(options);
     },
 
     /**
@@ -339,30 +381,31 @@
       var NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS;
 
       var object = {
-        type:             this.type,
-        originX:          this.originX,
-        originY:          this.originY,
-        left:             toFixed(this.left, NUM_FRACTION_DIGITS),
-        top:              toFixed(this.top, NUM_FRACTION_DIGITS),
-        width:            toFixed(this.width, NUM_FRACTION_DIGITS),
-        height:           toFixed(this.height, NUM_FRACTION_DIGITS),
-        fill:             (this.fill && this.fill.toObject) ? this.fill.toObject() : this.fill,
-        overlayFill:      this.overlayFill,
-        stroke:           this.stroke,
-        strokeWidth:      this.strokeWidth,
-        strokeDashArray:  this.strokeDashArray,
-        scaleX:           toFixed(this.scaleX, NUM_FRACTION_DIGITS),
-        scaleY:           toFixed(this.scaleY, NUM_FRACTION_DIGITS),
-        angle:            toFixed(this.getAngle(), NUM_FRACTION_DIGITS),
-        flipX:            this.flipX,
-        flipY:            this.flipY,
-        opacity:          toFixed(this.opacity, NUM_FRACTION_DIGITS),
-        selectable:       this.selectable,
-        hasControls:      this.hasControls,
-        hasBorders:       this.hasBorders,
-        hasRotatingPoint: this.hasRotatingPoint,
+        type:               this.type,
+        originX:            this.originX,
+        originY:            this.originY,
+        left:               toFixed(this.left, NUM_FRACTION_DIGITS),
+        top:                toFixed(this.top, NUM_FRACTION_DIGITS),
+        width:              toFixed(this.width, NUM_FRACTION_DIGITS),
+        height:             toFixed(this.height, NUM_FRACTION_DIGITS),
+        fill:               (this.fill && this.fill.toObject) ? this.fill.toObject() : this.fill,
+        overlayFill:        this.overlayFill,
+        stroke:             (this.stroke && this.stroke.toObject) ? this.stroke.toObject() : this.stroke,
+        strokeWidth:        this.strokeWidth,
+        strokeDashArray:    this.strokeDashArray,
+        scaleX:             toFixed(this.scaleX, NUM_FRACTION_DIGITS),
+        scaleY:             toFixed(this.scaleY, NUM_FRACTION_DIGITS),
+        angle:              toFixed(this.getAngle(), NUM_FRACTION_DIGITS),
+        flipX:              this.flipX,
+        flipY:              this.flipY,
+        opacity:            toFixed(this.opacity, NUM_FRACTION_DIGITS),
+        selectable:         this.selectable,
+        hasControls:        this.hasControls,
+        hasBorders:         this.hasBorders,
+        hasRotatingPoint:   this.hasRotatingPoint,
         transparentCorners: this.transparentCorners,
-        perPixelTargetFind: this.perPixelTargetFind
+        perPixelTargetFind: this.perPixelTargetFind,
+        shadow:             (this.shadow && this.shadow.toObject) ? this.shadow.toObject() : this.shadow
       };
 
       if (!this.includeDefaultValues) {
@@ -592,15 +635,20 @@
 
       if (this.stroke || this.strokeDashArray) {
         ctx.lineWidth = this.strokeWidth;
-        ctx.strokeStyle = this.stroke;
+        if (this.stroke && this.stroke.toLive) {
+          ctx.strokeStyle = this.stroke.toLive(ctx);
+        }
+        else {
+          ctx.strokeStyle = this.stroke;
+        }
       }
 
       if (this.overlayFill) {
         ctx.fillStyle = this.overlayFill;
       }
       else if (this.fill) {
-        ctx.fillStyle = this.fill.toLiveGradient
-          ? this.fill.toLiveGradient(ctx)
+        ctx.fillStyle = this.fill.toLive
+          ? this.fill.toLive(ctx)
           : this.fill;
       }
 
@@ -609,13 +657,37 @@
         ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
       }
 
+      this._setShadow(ctx);
       this._render(ctx, noTransform);
+      this._removeShadow(ctx);
 
       if (this.active && !noTransform) {
         this.drawBorders(ctx);
         this.hideCorners || this.drawCorners(ctx);
       }
       ctx.restore();
+    },
+
+    /**
+     * @private
+     * @method _setShadow
+     */
+    _setShadow: function(ctx) {
+      if (!this.shadow) return;
+
+      ctx.shadowColor = this.shadow.color;
+      ctx.shadowBlur = this.shadow.blur;
+      ctx.shadowOffsetX = this.shadow.offsetX;
+      ctx.shadowOffsetY = this.shadow.offsetY;
+    },
+
+    /**
+     * @private
+     * @method _removeShadow
+     */
+    _removeShadow: function(ctx) {
+      ctx.shadowColor = '';
+      ctx.shadowBlur = ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
     },
 
     /**
@@ -791,13 +863,19 @@
     },
 
     /**
-     * @private
-     * @method _initGradient
+     * Sets pattern fill of an object
+     * @method setPatternFill
      */
-    _initGradient: function(options) {
-      if (options.fill && typeof options.fill === 'object' && !(options.fill instanceof fabric.Gradient)) {
-        this.set('fill', new fabric.Gradient(options.fill));
-      }
+    setPatternFill: function(options) {
+      this.set('fill', new fabric.Pattern(options));
+    },
+
+    /**
+     * Sets shadow of an object
+     * @method setShadow
+     */
+    setShadow: function(options) {
+      this.set('shadow', new fabric.Shadow(options));
     },
 
     /**
