@@ -12984,7 +12984,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
      */
     drawCorners: function(ctx) {
       if (!this.hasControls) return;
-      this.transparentCorners = false;
       this.cornerSize = 12;
       var size = this.cornerSize,
           size2 = size / 2,
