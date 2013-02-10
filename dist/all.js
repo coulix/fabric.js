@@ -6539,6 +6539,11 @@ fabric.util.string = {
  */
 fabric.Pattern = fabric.util.createClass(/** @scope fabric.Pattern.prototype */ {
 
+  /**
+   * Repeat property of a pattern (one of repeat, repeat-x, repeat-y)
+   * @property
+   * @type String
+   */
   repeat: 'repeat',
 
   /**
@@ -6561,7 +6566,7 @@ fabric.Pattern = fabric.util.createClass(/** @scope fabric.Pattern.prototype */ 
   },
 
   /**
-   * Returns object representation of a gradient
+   * Returns object representation of a pattern
    * @method toObject
    * @return {Object}
    */
@@ -6586,10 +6591,10 @@ fabric.Pattern = fabric.util.createClass(/** @scope fabric.Pattern.prototype */ 
   },
 
   /**
-   * Returns an instance of CanvasGradient
+   * Returns an instance of CanvasPattern
    * @method toLive
    * @param ctx
-   * @return {CanvasGradient}
+   * @return {CanvasPattern}
    */
   toLive: function(ctx) {
     var source = typeof this.source === 'function' ? this.source() : this.source;
@@ -8387,13 +8392,22 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
      * Returns SVG representation of canvas
      * @function
      * @method toSVG
+     * @param {Object} [options] Options for SVG output ("suppressPreamble: true"
+     * will start the svg output directly at "<svg...")
      * @return {String}
      */
-    toSVG: function() {
-      var markup = [
-        '<?xml version="1.0" standalone="no" ?>',
-          '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" ',
-            '"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">',
+    toSVG: function(options) {
+      options || (options = { });
+      var markup = [];
+
+      if (!options.suppressPreamble) {
+        markup.push(
+          '<?xml version="1.0" standalone="no" ?>',
+            '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" ',
+              '"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">'
+        );
+      }
+      markup.push(
           '<svg ',
             'xmlns="http://www.w3.org/2000/svg" ',
             'xmlns:xlink="http://www.w3.org/1999/xlink" ',
@@ -8403,7 +8417,7 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
             'xml:space="preserve">',
           '<desc>Created with Fabric.js ', fabric.version, '</desc>',
           fabric.createSVGFontFacesMarkup(this.getObjects())
-      ];
+      );
 
       if (this.backgroundImage) {
         markup.push(
@@ -8768,27 +8782,6 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
     initialize: function(fabricCanvas) {
       this.canvas = fabricCanvas;
       this._points = [];
-      this._color = this.canvas.freeDrawingColor;
-      this._strokeWidth = this.canvas.freeDrawingLineWidth;
-    },
-
-    /**
-     * Set path color
-     * @method setColor
-     * @param color {String/rgb/rgba}
-     *
-     */
-    setColor: function(color) {
-        this._color = color;
-    },
-
-    /**
-     * Set path thichness (strokeWidth)
-     * @method setThickness
-     * @param thickness {int}
-     */
-    setThickness: function(thickness) {
-      this._strokeWidth = thickness;
     },
 
     /**
@@ -8813,8 +8806,8 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
       var ctx = this.canvas.contextTop;
 
       // set freehanddrawing line canvas parameters
-      ctx.strokeStyle = this._color;
-      ctx.lineWidth = this._strokeWidth;
+      ctx.strokeStyle = this.canvas.freeDrawingColor;
+      ctx.lineWidth = this.canvas.freeDrawingLineWidth;
       ctx.lineCap = ctx.lineJoin = 'round';
     },
 
@@ -8854,29 +8847,26 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
      */
     _render: function() {
       var ctx  = this.canvas.contextTop;
-      var ppts = this._points;
-      var p1 = ppts[0];
-      var p2 = ppts[1];
-
       ctx.beginPath();
+
+      var p1 = this._points[0];
+      var p2 = this._points[1];
+
       ctx.moveTo(p1.x, p1.y);
 
-      for (var i = 1, len = this._points.length - 2; i < len; i++) {
+      for (var i = 1, len = this._points.length; i < len; i++) {
         // we pick the point between pi+1 & pi+2 as the
         // end point and p1 as our control point.
-        var c = (ppts[i].x + ppts[i + 1].x) / 2;
-        var d = (ppts[i].y + ppts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(ppts[i].x, ppts[i].y, c, d);
-        
+        var midPoint = p1.midPointFrom(p2);
+        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
+
+        p1 = this._points[i];
+        p2 = this._points[i+1];
       }
-      
-      // For the last 2 points
-      ctx.quadraticCurveTo(
-          ppts[i].x,
-          ppts[i].y,
-          ppts[i + 1].x,
-          ppts[i + 1].y
-      );
+      // Draw last line as a straight line while
+      // we wait for the next point to be able to calculate
+      // the bezier control point
+      ctx.lineTo(p1.x, p1.y);
       ctx.stroke();
     },
 
@@ -8959,6 +8949,20 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
     },
 
     /**
+     * Creates fabric.Path object to add on canvas
+     * @method createPath
+     * @param {String} pathData Path data
+     * @return {fabric.Path} path to add on canvas
+     */
+    createPath: function(pathData) {
+      var path = new fabric.Path(pathData);
+      path.fill = null;
+      path.stroke = this.canvas.freeDrawingColor;
+      path.strokeWidth = this.canvas.freeDrawingLineWidth;
+      return path;
+    },
+
+    /**
      * On mouseup after drawing the path on contextTop canvas
      * we use the points captured to create an new fabric path object
      * and add it to the fabric canvas.
@@ -8969,19 +8973,12 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
       this.canvas._isCurrentlyDrawing = false;
       var ctx = this.canvas.contextTop;
       ctx.closePath();
-      var path = this._getSVGPathData();
-      path = path.join('');
 
+      var pathData = this._getSVGPathData().join('');
       var thickness = this._strokeWidth / 2;
-      if (path === "M 0 0 Q 0 0 0 0 L 0 0 ") {
-        path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
+      if (pathData === "M 0 0 Q 0 0 0 0 L 0 0 ") {
+        pathData = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
       }
-
-      var p = new fabric.Path(path);
-      p.fill = null;
-      p.stroke = this._color;
-      p.strokeWidth = this._strokeWidth;
-      this.canvas.add(p);
 
       // set path origin coordinates based on our bounding box
       var originLeft = this.box.minx  + (this.box.maxx - this.box.minx) /2;
@@ -8989,15 +8986,17 @@ fabric.Shadow = fabric.util.createClass(/** @scope fabric.Shadow.prototype */ {
 
       this.canvas.contextTop.arc(originLeft, originTop, 3, 0, Math.PI * 2, false);
 
-      p.set({ left: originLeft, top: originTop });
+      var path = this.createPath(pathData);
+      path.set({ left: originLeft, top: originTop });
 
-      // does not change position
-      p.setCoords();
+      this.canvas.add(path);
+      path.setCoords();
 
+      this.canvas.contextTop && this.canvas.clearContext(this.canvas.contextTop);
       this.canvas.renderAll();
 
       // fire event 'path' created
-      this.canvas.fire('path:created', { path: p });
+      this.canvas.fire('path:created', { path: path });
     }
   });
 
@@ -10788,20 +10787,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
         backgroundImageLoaded,
         overlayImageLoaded;
 
-    if (serialized.background) {
-      this.setBackgroundColor(serialized.background, function() {
-
-        _this.renderAll();
-
-        backgroundPatternLoaded = true;
-
-        callback && overlayImageLoaded && backgroundImageLoaded && callback();
-      });
-    }
-    else {
-      backgroundPatternLoaded = true;
-    }
-
     if (serialized.backgroundImage) {
       this.setBackgroundImage(serialized.backgroundImage, function() {
 
@@ -10833,6 +10818,19 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
     }
     else {
       overlayImageLoaded = true;
+    }
+
+    if (serialized.background) {
+      this.setBackgroundColor(serialized.background, function() {
+
+        _this.renderAll();
+        backgroundPatternLoaded = true;
+
+        callback && overlayImageLoaded && backgroundImageLoaded && callback();
+      });
+    }
+    else {
+      backgroundPatternLoaded = true;
     }
 
     if (!serialized.backgroundImage && !serialized.overlayImage && !serialized.background) {
@@ -11913,7 +11911,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
      * @method _animate
      */
     _animate: function(property, to, options) {
-      var obj = this;
+      var obj = this, propPair;
 
       to = to.toString();
 
@@ -11924,12 +11922,20 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
         options = fabric.util.object.clone(options);
       }
 
+      if (~property.indexOf('.')) {
+        propPair = property.split('.');
+      }
+
+      var currentValue = propPair
+        ? this.get(propPair[0])[propPair[1]]
+        : this.get(property);
+
       if (!('from' in options)) {
-        options.from = this.get(property);
+        options.from = currentValue;
       }
 
       if (~to.indexOf('=')) {
-        to = this.get(property) + parseFloat(to.replace('=', ''));
+        to = currentValue + parseFloat(to.replace('=', ''));
       }
       else {
         to = parseFloat(to);
@@ -11942,7 +11948,12 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
         easing: options.easing,
         duration: options.duration,
         onChange: function(value) {
-          obj.set(property, value);
+          if (propPair) {
+            obj[propPair[0]][propPair[1]] = value;
+          }
+          else {
+            obj.set(property, value);
+          }
           options.onChange && options.onChange();
         },
         onComplete: function() {
@@ -14249,14 +14260,14 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @scope fabric.Stati
       this.width = (maxX - minX) || 1;
       this.height = (maxY - minY) || 1;
 
-      var halfWidth = this.width / 2,
-          halfHeight = this.height / 2;
+      // var halfWidth = this.width / 2,
+      //     halfHeight = this.height / 2;
 
       // change points to offset polygon into a bounding box
-      this.points.forEach(function(p) {
-        p.x -= halfWidth;
-        p.y -= halfHeight;
-      }, this);
+      // this.points.forEach(function(p) {
+      //   p.x -= halfWidth;
+      //   p.y -= halfHeight;
+      // }, this);
 
       this.minX = minX;
       this.minY = minY;
@@ -17313,7 +17324,7 @@ fabric.Image.filters.Pixelate.fromObject = function(object) {
   fabric.Text = fabric.util.createClass(fabric.Object, /** @scope fabric.Text.prototype */ {
 
     /**
-     * Font size
+     * Font size (in pixels)
      * @property
      * @type Number
      */

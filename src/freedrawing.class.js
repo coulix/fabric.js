@@ -31,27 +31,6 @@
     initialize: function(fabricCanvas) {
       this.canvas = fabricCanvas;
       this._points = [];
-      this._color = this.canvas.freeDrawingColor;
-      this._strokeWidth = this.canvas.freeDrawingLineWidth;
-    },
-
-    /**
-     * Set path color
-     * @method setColor
-     * @param color {String/rgb/rgba}
-     *
-     */
-    setColor: function(color) {
-        this._color = color;
-    },
-
-    /**
-     * Set path thichness (strokeWidth)
-     * @method setThickness
-     * @param thickness {int}
-     */
-    setThickness: function(thickness) {
-      this._strokeWidth = thickness;
     },
 
     /**
@@ -76,8 +55,8 @@
       var ctx = this.canvas.contextTop;
 
       // set freehanddrawing line canvas parameters
-      ctx.strokeStyle = this._color;
-      ctx.lineWidth = this._strokeWidth;
+      ctx.strokeStyle = this.canvas.freeDrawingColor;
+      ctx.lineWidth = this.canvas.freeDrawingLineWidth;
       ctx.lineCap = ctx.lineJoin = 'round';
     },
 
@@ -117,29 +96,26 @@
      */
     _render: function() {
       var ctx  = this.canvas.contextTop;
-      var ppts = this._points;
-      var p1 = ppts[0];
-      var p2 = ppts[1];
-
       ctx.beginPath();
+
+      var p1 = this._points[0];
+      var p2 = this._points[1];
+
       ctx.moveTo(p1.x, p1.y);
 
-      for (var i = 1, len = this._points.length - 2; i < len; i++) {
+      for (var i = 1, len = this._points.length; i < len; i++) {
         // we pick the point between pi+1 & pi+2 as the
         // end point and p1 as our control point.
-        var c = (ppts[i].x + ppts[i + 1].x) / 2;
-        var d = (ppts[i].y + ppts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(ppts[i].x, ppts[i].y, c, d);
-        
+        var midPoint = p1.midPointFrom(p2);
+        ctx.quadraticCurveTo(p1.x, p1.y, midPoint.x, midPoint.y);
+
+        p1 = this._points[i];
+        p2 = this._points[i+1];
       }
-      
-      // For the last 2 points
-      ctx.quadraticCurveTo(
-          ppts[i].x,
-          ppts[i].y,
-          ppts[i + 1].x,
-          ppts[i + 1].y
-      );
+      // Draw last line as a straight line while
+      // we wait for the next point to be able to calculate
+      // the bezier control point
+      ctx.lineTo(p1.x, p1.y);
       ctx.stroke();
     },
 
@@ -222,6 +198,20 @@
     },
 
     /**
+     * Creates fabric.Path object to add on canvas
+     * @method createPath
+     * @param {String} pathData Path data
+     * @return {fabric.Path} path to add on canvas
+     */
+    createPath: function(pathData) {
+      var path = new fabric.Path(pathData);
+      path.fill = null;
+      path.stroke = this.canvas.freeDrawingColor;
+      path.strokeWidth = this.canvas.freeDrawingLineWidth;
+      return path;
+    },
+
+    /**
      * On mouseup after drawing the path on contextTop canvas
      * we use the points captured to create an new fabric path object
      * and add it to the fabric canvas.
@@ -232,19 +222,12 @@
       this.canvas._isCurrentlyDrawing = false;
       var ctx = this.canvas.contextTop;
       ctx.closePath();
-      var path = this._getSVGPathData();
-      path = path.join('');
 
+      var pathData = this._getSVGPathData().join('');
       var thickness = this._strokeWidth / 2;
-      if (path === "M 0 0 Q 0 0 0 0 L 0 0 ") {
-        path = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
+      if (pathData === "M 0 0 Q 0 0 0 0 L 0 0 ") {
+        pathData = "M 0 0 Q 0 0 "+ thickness + " 0 Q 0 0 0 " + thickness + " L " + thickness + " " + thickness + " ";
       }
-
-      var p = new fabric.Path(path);
-      p.fill = null;
-      p.stroke = this._color;
-      p.strokeWidth = this._strokeWidth;
-      this.canvas.add(p);
 
       // set path origin coordinates based on our bounding box
       var originLeft = this.box.minx  + (this.box.maxx - this.box.minx) /2;
@@ -252,15 +235,17 @@
 
       this.canvas.contextTop.arc(originLeft, originTop, 3, 0, Math.PI * 2, false);
 
-      p.set({ left: originLeft, top: originTop });
+      var path = this.createPath(pathData);
+      path.set({ left: originLeft, top: originTop });
 
-      // does not change position
-      p.setCoords();
+      this.canvas.add(path);
+      path.setCoords();
 
+      this.canvas.contextTop && this.canvas.clearContext(this.canvas.contextTop);
       this.canvas.renderAll();
 
       // fire event 'path' created
-      this.canvas.fire('path:created', { path: p });
+      this.canvas.fire('path:created', { path: path });
     }
   });
 
