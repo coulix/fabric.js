@@ -111,6 +111,20 @@
 
       var target;
 
+      // Add a new custom state 'Sleep'
+      // In this state the events are still fired
+      // but fabric does not handle either drawing
+      // nor elements manipulation.
+      // We use this state to capture events and draw 
+      // other things than free Drawing
+
+      if (this.isSleepMode) {
+        pointer = this.getPointer(e);
+        this.fire('mouse:up', { e: e });
+        return
+      }
+
+
       if (this.isDrawingMode && this._isCurrentlyDrawing) {
         this.freeDrawing._finalizeAndAddPath();
         this.fire('mouse:up', { e: e });
@@ -194,6 +208,12 @@
       var isLeftClick  = 'which' in e ? e.which === 1 : e.button === 1;
       if (!isLeftClick && !fabric.isTouchSupported) return;
 
+      if (this.isSleepMode) {
+        pointer = this.getPointer(e);
+        this.fire('mouse:down', { e: e });
+        return
+      }
+
       if (this.isDrawingMode) {
         pointer = this.getPointer(e);
         this.freeDrawing._prepareForDrawing(pointer);
@@ -270,6 +290,12 @@
     __onMouseMove: function (e) {
 
       var target, pointer;
+
+      if (this.isSleepMode) {
+        pointer = this.getPointer(e);
+        this.fire('mouse:move', { e: e });
+        return
+      }
 
       if (this.isDrawingMode) {
         if (this._isCurrentlyDrawing) {
