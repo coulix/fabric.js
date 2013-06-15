@@ -151,6 +151,9 @@
       if (options.backgroundColor) {
         this.setBackgroundColor(options.backgroundColor, this.renderAll.bind(this));
       }
+      if (options.backgroundImageAsPattern) {
+         this.backgroundImageAsPattern = options.backgroundImageAsPattern;
+      }
       this.calcOffset();
     },
 
@@ -639,7 +642,13 @@
         canvasToDrawOn.drawImage(this.backgroundImage, 0, 0, this.width, this.height);
       }
       else {
-        canvasToDrawOn.drawImage(this.backgroundImage, 0, 0);
+          if (this.backgroundImageAsPattern) {
+              var pattern = canvasToDrawOn.createPattern(this.backgroundImage, "repeat");
+              canvasToDrawOn.fillStyle = pattern;
+              canvasToDrawOn.fillRect(0, 0, this.width, this.height);
+          } else {
+              canvasToDrawOn.drawImage(this.backgroundImage, 0, 0);
+          }
       }
       canvasToDrawOn.restore();
     },
